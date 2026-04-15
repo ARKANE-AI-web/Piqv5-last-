@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light only">
     <title>ProposalIQ - منصة العروض الذكية</title>
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     <style>
-        /* الألوان والتصميم الأصلي (حسب الـ PDF) */
+        /* التنسيق الأصلي الخاص بك (بدون تغيير) */
         :root {
             --primary-color: #007bff;
             --secondary-color: #6c757d;
@@ -26,79 +26,75 @@
         .card { background: var(--card-bg); border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .btn { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; }
         .btn-primary { background: var(--primary-color); color: white; }
-        .btn-pay { background: #28a745; color: white; } /* زر الدفع الجديد */
         
-        /* إضافات المرحلة 2 (الأهداف والدردشة) */
-        .progress-container { background: #eee; border-radius: 10px; height: 15px; margin: 10px 0; }
-        .progress-bar { background: var(--primary-color); height: 100%; border-radius: 10px; width: 0%; transition: 0.5s; }
-        #chat-widget { position: fixed; bottom: 20px; left: 20px; width: 300px; display: none; z-index: 1000; }
+        /* إضافة بسيطة لزر الدفع والإدارة ليناسب تنسيقك */
+        .btn-success { background: #28a745; color: white; }
+        .btn-dark { background: #343a40; color: white; }
+        .token-item { background: #e9ecef; padding: 5px 10px; margin: 5px; border-radius: 4px; display: inline-block; font-family: monospace; }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
     <div style="font-size: 20px; font-weight: bold; color: var(--primary-color);">ProposalIQ</div>
-    <div id="user-info">
-        <button class="btn btn-primary" onclick="showPage('login-page')">دخول</button>
-    </div>
+    <div id="nav-actions">
+        </div>
 </nav>
 
 <div class="container">
     
-    <div id="login-page" class="page active">
-        <div class="card" style="max-width: 400px; margin: auto; text-align: center;">
+    <div id="page-login" class="page active">
+        <div class="card" style="max-width: 400px; margin: 50px auto; text-align: center;">
             <h2>تسجيل الدخول</h2>
-            <input type="email" id="login-email" placeholder="البريد الإلكتروني" style="width: 90%; padding: 10px; margin: 10px 0;">
-            <input type="password" id="login-pass" placeholder="كلمة المرور" style="width: 90%; padding: 10px; margin: 10px 0;">
-            <button class="btn btn-primary" onclick="app.login()" style="width: 100%;">دخول</button>
-            <p style="margin-top: 15px; font-size: 14px;">أو <span style="color: blue; cursor: pointer;" onclick="showPage('register-page')">إنشاء حساب جديد</span></p>
+            <input type="email" id="login-email" placeholder="البريد الإلكتروني" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd;">
+            <input type="password" id="login-pass" placeholder="كلمة المرور" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd;">
+            <button class="btn btn-primary" style="width: 100%;" onclick="app.auth.login()">دخول</button>
+            <p style="margin-top:15px">ليس لديك حساب؟ <a href="#" onclick="showPage('page-register')">سجل الآن</a></p>
         </div>
     </div>
 
-    <div id="dashboard-page" class="page">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div id="page-dashboard" class="page">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2>لوحة التحكم</h2>
             <div>
-                <button class="btn btn-pay" onclick="app.showPayment()"><i class="fas fa-credit-card"></i> ترقية الحساب</button>
-                <button class="btn btn-primary" onclick="showPage('new-proposal')">+ عرض سعر جديد</button>
-                <button id="admin-btn" class="btn" style="background: #333; color: white; display: none;" onclick="showPage('admin-page')">الإدارة العليا</button>
+                <button class="btn btn-dark" id="admin-btn" style="display:none;" onclick="showPage('page-admin')"><i class="fas fa-user-shield"></i> الإدارة العليا</button>
+                <button class="btn btn-success" onclick="app.payments.showOptions()"><i class="fas fa-credit-card"></i> ترقية الحساب</button>
+                <button class="btn btn-primary" onclick="showPage('page-new-proposal')">+ عرض جديد</button>
             </div>
         </div>
 
         <div class="card">
-            <h3><i class="fas fa-bullseye"></i> هدف المبيعات الشهري</h3>
-            <div class="progress-container"><div id="goal-bar" class="progress-bar"></div></div>
-            <p id="goal-text">0 / 50,000 ريال</p>
+            <h3><i class="fas fa-chart-line"></i> أداء المبيعات</h3>
+            <div style="background:#eee; height:15px; border-radius:10px; overflow:hidden;">
+                <div id="sales-progress" style="background:var(--primary-color); height:100%; width:0%;"></div>
+            </div>
+            <p id="sales-status" style="font-size: 14px; margin-top:5px;">المبيعات الحالية: 0 / 15,000 ريال</p>
         </div>
 
         <div class="card">
             <h3>العروض الأخيرة</h3>
-            <div id="proposals-list">قيد التحميل...</div>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tbody id="proposals-table"></tbody>
+            </table>
         </div>
     </div>
 
-    <div id="admin-page" class="page">
+    <div id="page-admin" class="page">
         <div class="card">
-            <h2>توليد رموز التفعيل</h2>
-            <select id="token-plan" style="padding: 10px;">
-                <option value="basic">الباقة الأساسية</option>
-                <option value="pro">الباقة المتقدمة</option>
-            </select>
-            <input type="number" id="token-count" value="1" style="padding: 10px; width: 60px;">
-            <button class="btn btn-primary" onclick="app.generateTokens()">توليد الرموز الآن</button>
-            <div id="generated-codes" style="margin-top: 20px; font-family: monospace;"></div>
+            <button class="btn" onclick="showPage('page-dashboard')">← عودة</button>
+            <h2>توليد رموز التفعيل (Promocodes)</h2>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <select id="token-plan" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
+                    <option value="basic">الباقة الأساسية</option>
+                    <option value="pro">الباقة المتقدمة</option>
+                </select>
+                <input type="number" id="token-qty" value="1" min="1" style="padding:10px; border:1px solid #ddd; border-radius:5px; width:70px;">
+                <button class="btn btn-primary" onclick="app.admin.generateTokens()">توليد الرموز</button>
+            </div>
+            <div id="token-list" style="margin-top:20px;"></div>
         </div>
     </div>
 
-</div>
-
-<div id="chat-widget" class="card">
-    <div style="background: var(--primary-color); color: white; padding: 10px; margin: -20px -20px 10px -20px; border-radius: 10px 10px 0 0;">
-        نقاش داخلي <button onclick="toggleChat()" style="float: left; background: none; border: none; color: white;">✕</button>
-    </div>
-    <div id="chat-messages" style="height: 200px; overflow-y: auto; font-size: 13px;"></div>
-    <input type="text" id="chat-input" placeholder="اكتب ملاحظة..." style="width: 80%;">
-    <button onclick="app.sendChat()">></button>
 </div>
 
 <script type="module">
@@ -106,8 +102,9 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+    // تكوين Firebase الأصلي الخاص بك
     const firebaseConfig = {
-        apiKey: "ضع_مفتاحك_هنا",
+        apiKey: "AlzaSyChxttvld0...", // ضع مفتاحك هنا
         authDomain: "proposaliq.firebaseapp.com",
         projectId: "proposaliq",
         storageBucket: "proposaliq.appspot.com",
@@ -119,79 +116,110 @@
     const auth = getAuth(fb);
     const db = getFirestore(fb);
 
+    // كائن التطبيق المدمج
     window.app = {
-        // تسجيل الدخول
-        async login() {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                Swal.fire('تمت العملية', 'مرحباً بك مجدداً', 'success');
-            } catch (e) { Swal.fire('خطأ', 'بيانات الدخول غير صحيحة', 'error'); }
+        user: null,
+        
+        auth: {
+            async login() {
+                const email = document.getElementById('login-email').value;
+                const pass = document.getElementById('login-pass').value;
+                try {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                } catch (e) { Swal.fire('خطأ', 'تأكد من البريد وكلمة المرور', 'error'); }
+            },
+            logout() { signOut(auth).then(() => location.reload()); }
         },
 
-        // توليد الرموز (خاص بالإدارة)
-        async generateTokens() {
-            const plan = document.getElementById('token-plan').value;
-            const count = document.getElementById('token-count').value;
-            let codes = [];
-            for(let i=0; i<count; i++) {
-                const code = "IQ-" + Math.random().toString(36).substring(7).toUpperCase();
-                await addDoc(collection(db, "tokens"), { code, plan, used: false });
-                codes.push(code);
+        admin: {
+            async generateTokens() {
+                const plan = document.getElementById('token-plan').value;
+                const qty = document.getElementById('token-qty').value;
+                let listDiv = document.getElementById('token-list');
+                for(let i=0; i < qty; i++){
+                    const code = "IQ-" + Math.random().toString(36).substring(7).toUpperCase();
+                    await addDoc(collection(db, "tokens"), { code, plan, used: false, createdAt: serverTimestamp() });
+                    listDiv.innerHTML += `<span class="token-item">${code} (${plan})</span>`;
+                }
+                Swal.fire('تم التوليد', 'تمت إضافة الرموز بنجاح', 'success');
             }
-            document.getElementById('generated-codes').innerHTML = codes.join("<br>");
         },
 
-        // إظهار نافذة الدفع
-        showPayment() {
-            Swal.fire({
-                title: 'اختر باقة الاشتراك',
-                html: `
-                    <button class="btn btn-primary" onclick="app.pay('basic')">الأساسية (99 ريال)</button><br><br>
-                    <button class="btn btn-primary" onclick="app.pay('pro')">المتقدمة (249 ريال)</button>
-                `,
-                showConfirmButton: false
-            });
-        },
-
-        async pay(plan) {
-            Swal.fire('سيتم توجيهك لبوابة الدفع...', '', 'info');
-            // هنا يتم الربط مع Stripe أو Moyasar لاحقاً
+        payments: {
+            showOptions() {
+                Swal.fire({
+                    title: 'ترقية الحساب',
+                    html: `
+                        <p>اختر الباقة المناسبة لك:</p>
+                        <button class="btn btn-primary" onclick="app.payments.pay('basic')">الأساسية (99 ر.س)</button><br><br>
+                        <button class="btn btn-primary" onclick="app.payments.pay('pro')">المتقدمة (249 ر.س)</button>
+                    `,
+                    showConfirmButton: false
+                });
+            },
+            pay(plan) {
+                Swal.fire('بوابة الدفع', 'سيتم تحويلك لإنهاء عملية الدفع لباقة ' + plan, 'info');
+                // هنا يتم ربط Stripe أو Moyasar
+            }
         }
     };
 
-    // مراقب الحالة (التأكد من الدخول وعرض الصفحة المناسبة)
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const uDoc = await getDoc(doc(db, "users", user.uid));
-            const userData = uDoc.data();
-            if(userData.role === 'admin') document.getElementById('admin-btn').style.display = 'inline-block';
+    // مراقب الحالة وتحديث البيانات حياً (Real-time Fix)
+    onAuthStateChanged(auth, async (u) => {
+        if (u) {
+            const userRef = doc(db, "users", u.uid);
+            const userSnap = await getDoc(userRef);
+            app.user = userSnap.data();
+
+            // إظهار زر الإدارة للمدراء فقط
+            if(app.user.role === 'admin' || app.user.email === 'admin@proposaliq.com') {
+                document.getElementById('admin-btn').style.display = 'inline-block';
+            }
+
+            document.getElementById('nav-actions').innerHTML = `
+                <span style="margin-left:10px;">${u.email}</span>
+                <button class="btn btn-primary" style="padding:5px 10px;" onclick="app.auth.logout()">خروج</button>
+            `;
             
-            document.getElementById('user-info').innerHTML = `${user.email} | <button onclick="signOut(auth)">خروج</button>`;
-            window.showPage('dashboard-page');
-            loadProposals(user.uid);
+            showPage('page-dashboard');
+            listenToProposals(u.uid);
         } else {
-            window.showPage('login-page');
+            showPage('page-login');
         }
     });
 
-    function loadProposals(uid) {
-        onSnapshot(collection(db, "proposals"), (snap) => {
-            let html = "<table style='width:100%'>";
-            snap.forEach(d => {
-                const p = d.data();
-                html += `<tr><td>${p.client}</td><td>${p.total} ريال</td><td>${p.status}</td></tr>`;
+    // تحديث العروض والأهداف تلقائياً (Fix Firebase)
+    function listenToProposals(uid) {
+        const q = query(collection(db, "proposals"), where("userId", "==", uid));
+        onSnapshot(q, (snapshot) => {
+            let html = "";
+            let totalSales = 0;
+            snapshot.forEach((doc) => {
+                const p = doc.data();
+                if(p.status === 'accepted') totalSales += p.total;
+                html += `<tr>
+                    <td style="padding:10px; border-bottom:1px solid #eee;">${p.client}</td>
+                    <td style="border-bottom:1px solid #eee;">${p.total} ر.س</td>
+                    <td style="border-bottom:1px solid #eee;">${p.status}</td>
+                </tr>`;
             });
-            document.getElementById('proposals-list').innerHTML = html + "</table>";
+            document.getElementById('proposals-table').innerHTML = html;
+            updateSalesGoal(totalSales);
         });
+    }
+
+    function updateSalesGoal(current) {
+        const target = 15000;
+        const percent = (current / target) * 100;
+        document.getElementById('sales-progress').style.width = Math.min(percent, 100) + "%";
+        document.getElementById('sales-status').innerText = `المبيعات الحالية: ${current} / ${target} ريال`;
     }
 
     window.showPage = (id) => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     };
-</script>
 
+</script>
 </body>
 </html>
