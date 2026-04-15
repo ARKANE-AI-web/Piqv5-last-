@@ -1,1177 +1,197 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light only">
-<title>ProposalIQ | منصة العروض الذكية</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-  :root { --primary: #2563eb; --primary-hover: #1d4ed8; --secondary: #f8fafc; --text: #0f172a; --muted: #64748b; --border: #e2e8f0; --success: #22c55e; --warning: #eab308; --danger: #ef4444; --card-bg: #ffffff; }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-  body { background-color: var(--secondary); color: var(--text); line-height: 1.6; padding-bottom: 50px; }
-  .page { display: none; padding: 20px; max-width: 1200px; margin: auto; animation: fadeIn 0.3s ease; }
-  .page.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .navbar { background: var(--card-bg); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-  .logo { font-size: 1.5rem; font-weight: bold; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 8px; }
-  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-  .btn-outline:hover { background: var(--secondary); }
-  .btn-success { background: var(--success); color: white; }
-  .btn-danger { background: var(--danger); color: white; }
-  .btn-ghost { background: transparent; color: var(--primary); }
-  .btn-sm { padding: 5px 10px; font-size: 0.85rem; }
-  .card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid var(--border); }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-  .stat-card { text-align: center; padding: 20px; background: var(--secondary); border-radius: 8px; border: 1px solid var(--border); }
-  .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); margin-bottom: 5px; }
-  .stat-label { font-size: 0.9rem; color: var(--muted); }
-  input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; font-family: inherit; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--card-bg); padding: 30px; border-radius: 16px; width: 90%; max-width: 450px; position: relative; animation: slideUp 0.3s ease; }
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .modal-close { position: absolute; top: 15px; left: 15px; background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
-  .alert { padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; display: none; }
-  .alert-danger { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
-  .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
-  .alert-warning { background: #fefce8; color: var(--warning); border: 1px solid #fef08a; display: block; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-  th, td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); }
-  th { background: var(--secondary); font-weight: 600; color: var(--muted); }
-  .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-  .s-draft { background: #e2e8f0; color: #475569; }
-  .s-pending { background: #fef08a; color: #854d0e; }
-  .s-sent { background: #dbeafe; color: #1e40af; }
-  .s-accepted { background: #bbf7d0; color: #166534; }
-  .s-rejected { background: #fecaca; color: #991b1b; }
-  .progress-bar { width: 100%; background-color: var(--border); border-radius: 8px; overflow: hidden; height: 10px; margin-top: 5px; }
-  .progress-fill { height: 100%; background-color: var(--primary); transition: width 0.3s ease; }
-  .chat-box { height: 250px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; background: var(--secondary); margin-bottom: 10px; }
-  .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; width: fit-content; max-width: 80%; }
-  .msg-self { background: var(--primary); color: white; margin-right: auto; }
-  .msg-other { background: white; border: 1px solid var(--border); margin-left: auto; }
-  .leaderboard-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); align-items: center; }
-  .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-  .nav-tab { background: transparent; border: none; padding: 8px 15px; cursor: pointer; font-weight: 600; color: var(--muted); border-radius: 8px; }
-  .nav-tab.active { background: var(--primary); color: white; }
-  .crm-card { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light only">
+    <title>ProposalIQ - منصة العروض الذكية</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* الألوان والتصميم الأصلي (حسب الـ PDF) */
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); margin: 0; }
+        .navbar { background: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { padding: 20px; max-width: 1200px; margin: auto; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .card { background: var(--card-bg); border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-pay { background: #28a745; color: white; } /* زر الدفع الجديد */
+        
+        /* إضافات المرحلة 2 (الأهداف والدردشة) */
+        .progress-container { background: #eee; border-radius: 10px; height: 15px; margin: 10px 0; }
+        .progress-bar { background: var(--primary-color); height: 100%; border-radius: 10px; width: 0%; transition: 0.5s; }
+        #chat-widget { position: fixed; bottom: 20px; left: 20px; width: 300px; display: none; z-index: 1000; }
+    </style>
 </head>
 <body>
 
-<div class="navbar">
-  <div class="logo" onclick="goToDashboard()"><i class="fas fa-file-signature"></i> ProposalIQ</div>
-  <div id="navActions" style="display:flex; gap:10px; align-items:center;"></div>
-</div>
-
-<div id="pageHome" class="page active" style="text-align:center; padding-top:80px;">
-  <h1 style="font-size:3rem; margin-bottom:20px; color:var(--primary);">حوّل عروضك إلى عقود مغلقة</h1>
-  <p style="font-size:1.2rem; color:var(--muted); margin-bottom:40px; max-width:600px; margin-left:auto; margin-right:auto;">منصة العروض الذكية لإدارة، إرسال، تتبع، وتوقيع العروض والتقارير الاحترافية لشركتك بذكاء وسرعة.</p>
-  <button class="btn btn-primary" style="font-size:1.2rem; padding:15px 30px;" onclick="showModal('registerModal')">ابدأ مجاناً الآن</button>
-  <button class="btn btn-outline" style="font-size:1.2rem; padding:15px 30px;" onclick="showModal('loginModal')">تسجيل الدخول</button>
-</div>
-
-<div id="pageAdmin" class="page">
-  <div class="card">
-    <h2>لوحة تحكم الإدارة العليا (توليد الرموز)</h2>
-    <div class="grid-2" style="margin-top:20px;">
-      <div>
-        <label>الباقة:</label>
-        <select id="adminTokenPlan">
-          <option value="basic_monthly">شهري أساسي (1 شهر، 30 عرض)</option>
-          <option value="advanced_monthly">شهري متقدم (1 شهر، 150 عرض)</option>
-          <option value="basic_yearly">سنوي أساسي (12 شهر، 360 عرض)</option>
-          <option value="advanced_yearly">سنوي متقدم (12 شهر، 1800 عرض)</option>
-          <option value="enterprise_yearly">سنوي مؤسسي (12 شهر، لا محدود)</option>
-        </select>
-        <label>الكمية (عدد الرموز):</label>
-        <input type="number" id="adminTokenCount" value="1" min="1" max="50">
-        <button class="btn btn-primary" onclick="generateAdminTokens()">توليد الرموز</button>
-      </div>
-      <div>
-        <h3>الرموز المولدة (الغير مستخدمة)</h3>
-        <div id="adminTokensList" style="max-height:300px; overflow-y:auto; border:1px solid var(--border); padding:10px; border-radius:8px; margin-top:10px;"></div>
-      </div>
+<nav class="navbar">
+    <div style="font-size: 20px; font-weight: bold; color: var(--primary-color);">ProposalIQ</div>
+    <div id="user-info">
+        <button class="btn btn-primary" onclick="showPage('login-page')">دخول</button>
     </div>
-  </div>
-</div>
+</nav>
 
-<div id="pageManagerDash" class="page">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2>مرحباً، <span id="mgrName"></span></h2>
-    <div style="text-align:left;">
-      <span style="color:var(--muted); font-size:0.9rem;">كود شركتك للمندوبين:</span>
-      <strong id="mgrCompanyCode" style="letter-spacing:2px; font-size:1.1rem;"></strong>
-      <button class="btn btn-ghost btn-sm" onclick="copyCompanyCode()"><i class="fas fa-copy"></i> نسخ</button>
-    </div>
-  </div>
-
-  <div id="mgrPlanStatus" class="card" style="background:#f0fdf4; border-color:#bbf7d0;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <h3 style="color:#166534; margin-bottom:5px;">حالة الاشتراك: <span id="mgrPlanBadge"></span></h3>
-        <p style="color:#15803d; font-size:0.9rem;" id="mgrSubInfo">ينتهي في <strong id="mgrSubExpiry"></strong> | الرصيد المتبقي: <strong id="mgrSubQuota"></strong></p>
-      </div>
-      <div id="mgrActivateSection"></div>
-    </div>
-  </div>
-
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchManagerTab('overview')">نظرة عامة</button>
-    <button class="nav-tab" onclick="switchManagerTab('leaderboard')">لوحة الأداء (Leaderboard)</button>
-    <button class="nav-tab" onclick="switchManagerTab('crm')">ملف العملاء الذكي (CRM)</button>
-    <button class="nav-tab" onclick="switchManagerTab('reports')">التقارير الآلية</button>
-  </div>
-
-  <div id="mgrTabOverview">
-    <div class="grid-3" style="margin-bottom:20px;">
-      <div class="stat-card"><div class="stat-value" id="mgrTotalProps">0</div><div class="stat-label">إجمالي العروض</div></div>
-      <div class="stat-card"><div class="stat-value" id="mgrSentProps" style="color:var(--warning);">0</div><div class="stat-label">أرسلت للعملاء</div></div>
-      <div class="stat-card"><div class="stat-value" id="mgrAcceptedProps" style="color:var(--success);">0</div><div class="stat-label">عروض مقبولة (إغلاق)</div></div>
-    </div>
+<div class="container">
     
-    <div class="grid-2">
-      <div class="card">
-        <h3>فريق المبيعات (<span id="mgrTotalAgents">0</span>)</h3>
-        <div id="mgrAgentsList" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
-      </div>
-      <div class="card">
-        <h3>عروض بانتظار الاعتماد (<span id="mgrPendingCount">0</span>)</h3>
-        <div id="mgrApprovalsList" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
-      </div>
-    </div>
-    
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3>جميع العروض</h3>
-        <button class="btn btn-primary" onclick="showPage('pageNewProposal')"><i class="fas fa-plus"></i> إنشاء عرض جديد</button>
-      </div>
-      <div id="mgrAllProposals"></div>
-    </div>
-  </div>
-
-  <div id="mgrTabLeaderboard" style="display:none;">
-    <div class="card">
-      <h3>ترتيب المندوبين والمبيعات</h3>
-      <div id="mgrLeaderboardList" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;"></div>
-    </div>
-  </div>
-
-  <div id="mgrTabCRM" style="display:none;">
-    <div class="card">
-      <h3>سجل العملاء التفاعلي</h3>
-      <input type="text" id="crmSearch" placeholder="ابحث عن اسم عميل أو شركة..." onkeyup="renderCRM()" style="max-width:300px;">
-      <div id="mgrCRMList" style="margin-top:15px; display:grid; grid-template-columns:1fr 1fr; gap:15px;"></div>
-    </div>
-  </div>
-
-  <div id="mgrTabReports" style="display:none;">
-    <div class="card">
-      <h3>التقارير الشهرية الآلية</h3>
-      <p style="color:var(--muted); margin-bottom:15px;">توليد تقرير أداء شامل للشركة مع التوصيات ونسب الإغلاق.</p>
-      <button class="btn btn-primary" onclick="generateMonthlyReportPDF()"><i class="fas fa-file-pdf"></i> تحميل تقرير هذا الشهر</button>
-      <div id="reportPreviewArea" style="margin-top:20px; padding:20px; border:1px solid var(--border); display:none; background:white;"></div>
-    </div>
-  </div>
-</div>
-
-<div id="pageAgentDash" class="page">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <div>
-      <h2>مرحباً، <span id="agentName"></span></h2>
-      <p style="color:var(--muted); font-size:0.9rem;">الشركة: <strong id="agentCompanyLabel"></strong></p>
-    </div>
-    <button class="btn btn-primary" onclick="showPage('pageNewProposal')"><i class="fas fa-plus"></i> عرض جديد</button>
-  </div>
-
-  <div class="card" style="background:#f0fdf4; border-color:#bbf7d0;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <h3 style="color:#166534; margin-bottom:5px;">حالة الاشتراك: <span id="agentPlanBadge"></span></h3>
-        <p style="color:#15803d; font-size:0.9rem;" id="agentSubInfo">ينتهي في <strong id="agentSubExpiry"></strong> | الرصيد: <strong id="agentSubQuota"></strong></p>
-      </div>
-      <div id="agentActivateSection"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>هدف المبيعات الشهري (الخاص بك)</h3>
-    <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-top:10px;">
-      <span>المحقق: <strong id="agentGoalAchieved">0</strong> ريال</span>
-      <span>الهدف: <strong id="agentGoalTarget">100,000</strong> ريال</span>
-    </div>
-    <div class="progress-bar">
-      <div id="agentGoalProgress" class="progress-fill" style="width:0%;"></div>
-    </div>
-  </div>
-
-  <div id="agentNotifications" style="margin-bottom:20px;"></div>
-
-  <div class="grid-3" style="margin-bottom:20px;">
-    <div class="stat-card"><div class="stat-value" id="agTotalProps">0</div><div class="stat-label">كل العروض</div></div>
-    <div class="stat-card"><div class="stat-value" id="agSent" style="color:var(--warning);">0</div><div class="stat-label">بانتظار رد العميل</div></div>
-    <div class="stat-card"><div class="stat-value" id="agAccepted" style="color:var(--success);">0</div><div class="stat-label">تم إغلاقها</div></div>
-  </div>
-
-  <div id="agentApprovedAlert" class="alert alert-success" style="display:none;"></div>
-  <div id="agentRejections"></div>
-
-  <div class="card">
-    <h3>عروضي</h3>
-    <div id="agentProposalList" style="margin-top:15px;"></div>
-  </div>
-</div>
-
-<div id="pageNewProposal" class="page">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2><i class="fas fa-file-alt"></i> إعداد العرض</h2>
-    <button class="btn btn-outline" onclick="goBack()"><i class="fas fa-arrow-right"></i> رجوع</button>
-  </div>
-  
-  <div class="grid-2">
-    <div class="card">
-      <h3>بيانات العميل</h3>
-      <input type="text" id="propClientCompany" placeholder="اسم جهة العميل (مثال: شركة التقنية)" required>
-      <input type="text" id="propClientName" placeholder="عناية الأستاذ/ة" required>
-      <input type="email" id="propClientEmail" placeholder="البريد الإلكتروني للعميل">
-      <input type="text" id="propClientPhone" placeholder="رقم الهاتف للعميل (اختياري)">
-      <input type="text" id="propSubject" placeholder="موضوع العرض (مثال: عرض تصميم تطبيق)" required>
-    </div>
-    <div class="card">
-      <h3>مكتبة الخدمات المحفوظة</h3>
-      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">اختر من الخدمات السابقة لتسريع الإدخال</p>
-      <select id="savedServicesSelect" onchange="addSavedService()">
-        <option value="">-- اختر خدمة محفوظة --</option>
-      </select>
-      <button class="btn btn-outline btn-sm" onclick="showModal('saveServiceModal')" style="margin-top:10px; width:100%;"><i class="fas fa-save"></i> حفظ خدمة جديدة للمكتبة</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>البنود والتسعير</h3>
-    <table>
-      <thead><tr><th>البند / الوصف</th><th style="width:80px;">الكمية</th><th style="width:120px;">السعر (ريال)</th><th style="width:50px;"></th></tr></thead>
-      <tbody id="itemsBody"></tbody>
-    </table>
-    <button class="btn btn-outline btn-sm" onclick="addItem()"><i class="fas fa-plus"></i> إضافة بند</button>
-    
-    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>الإجمالي الفرعي:</span><strong id="totSubtotal">0 ريال</strong></div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
-        <span>الخصم (ريال):</span>
-        <input type="number" id="propDiscount" value="0" min="0" style="width:120px; margin:0;" oninput="recalcTotals()">
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>بعد الخصم:</span><strong id="totAfterDiscount">0 ريال</strong></div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>ضريبة القيمة المضافة (15%):</span><strong id="totVAT">0 ريال</strong></div>
-      <div style="display:flex; justify-content:space-between; font-size:1.2rem; color:var(--primary);"><span>الإجمالي النهائي:</span><strong id="totFinal">0 ريال</strong></div>
-    </div>
-  </div>
-  
-  <button class="btn btn-primary" style="width:100%; font-size:1.1rem; padding:15px;" onclick="saveProposal()"><i class="fas fa-paper-plane"></i> إرسال العرض للاعتماد</button>
-</div>
-
-<div id="pageProposalView" class="page">
-  <button class="btn btn-outline" style="margin-bottom:20px;" onclick="goBack()"><i class="fas fa-arrow-right"></i> رجوع</button>
-  
-  <div class="grid-2">
-    <div class="card" id="proposalRenderArea" style="background:white; border:1px solid #ddd;">
-      </div>
-    
-    <div>
-      <div class="card">
-        <h3>الإجراءات</h3>
-        <div id="propActionsArea" style="display:flex; flex-direction:column; gap:10px; margin-top:15px;"></div>
-      </div>
-      
-      <div class="card">
-        <h3>المحادثة الداخلية (تعليقات)</h3>
-        <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">مخفية عن العميل. للمدير والمندوب فقط.</p>
-        <div id="internalChatBox" class="chat-box"></div>
-        <div style="display:flex; gap:10px;">
-          <input type="text" id="internalChatInput" placeholder="اكتب تعليقاً..." style="margin:0;">
-          <button class="btn btn-primary" onclick="sendInternalMessage()"><i class="fas fa-paper-plane"></i></button>
+    <div id="login-page" class="page active">
+        <div class="card" style="max-width: 400px; margin: auto; text-align: center;">
+            <h2>تسجيل الدخول</h2>
+            <input type="email" id="login-email" placeholder="البريد الإلكتروني" style="width: 90%; padding: 10px; margin: 10px 0;">
+            <input type="password" id="login-pass" placeholder="كلمة المرور" style="width: 90%; padding: 10px; margin: 10px 0;">
+            <button class="btn btn-primary" onclick="app.login()" style="width: 100%;">دخول</button>
+            <p style="margin-top: 15px; font-size: 14px;">أو <span style="color: blue; cursor: pointer;" onclick="showPage('register-page')">إنشاء حساب جديد</span></p>
         </div>
-      </div>
     </div>
-  </div>
-</div>
 
-<div id="pageContract" class="page">
-  <button class="btn btn-outline" style="margin-bottom:20px;" onclick="goBack()"><i class="fas fa-arrow-right"></i> رجوع</button>
-  <button class="btn btn-success" style="margin-bottom:20px; float:left;" onclick="downloadContractPDF()"><i class="fas fa-download"></i> تحميل كملف PDF</button>
-  <div class="card" id="contractRenderArea" style="background:white; padding:40px; color:black;">
-  </div>
-</div>
+    <div id="dashboard-page" class="page">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>لوحة التحكم</h2>
+            <div>
+                <button class="btn btn-pay" onclick="app.showPayment()"><i class="fas fa-credit-card"></i> ترقية الحساب</button>
+                <button class="btn btn-primary" onclick="showPage('new-proposal')">+ عرض سعر جديد</button>
+                <button id="admin-btn" class="btn" style="background: #333; color: white; display: none;" onclick="showPage('admin-page')">الإدارة العليا</button>
+            </div>
+        </div>
 
-<div id="loginModal" class="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
-    <h2>تسجيل الدخول</h2>
-    <div id="loginError" class="alert alert-danger"></div>
-    <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
-    <input type="password" id="loginPassword" placeholder="كلمة المرور">
-    <button class="btn btn-primary" style="width:100%; margin-bottom:10px;" onclick="doLogin()">دخول</button>
-    <a href="#" style="color:var(--primary); font-size:0.9rem;" onclick="closeModal('loginModal'); showModal('forgotModal');">نسيت كلمة المرور؟</a>
-    <div style="margin-top:15px; text-align:center; font-size:0.9rem;">
-      <a href="#" style="color:var(--muted);" onclick="closeModal('loginModal'); showModal('adminModal');">دخول الإدارة العليا</a>
+        <div class="card">
+            <h3><i class="fas fa-bullseye"></i> هدف المبيعات الشهري</h3>
+            <div class="progress-container"><div id="goal-bar" class="progress-bar"></div></div>
+            <p id="goal-text">0 / 50,000 ريال</p>
+        </div>
+
+        <div class="card">
+            <h3>العروض الأخيرة</h3>
+            <div id="proposals-list">قيد التحميل...</div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div id="registerModal" class="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('registerModal')">&times;</button>
-    <h2>إنشاء حساب جديد</h2>
-    <div id="regError" class="alert alert-danger"></div>
-    <div style="display:flex; gap:10px; margin-bottom:15px;">
-      <button id="roleBtnManager" class="btn btn-outline" style="flex:1;" onclick="selectRole('manager')">مدير مبيعات</button>
-      <button id="roleBtnAgent" class="btn btn-outline" style="flex:1;" onclick="selectRole('agent')">مندوب مبيعات</button>
+    <div id="admin-page" class="page">
+        <div class="card">
+            <h2>توليد رموز التفعيل</h2>
+            <select id="token-plan" style="padding: 10px;">
+                <option value="basic">الباقة الأساسية</option>
+                <option value="pro">الباقة المتقدمة</option>
+            </select>
+            <input type="number" id="token-count" value="1" style="padding: 10px; width: 60px;">
+            <button class="btn btn-primary" onclick="app.generateTokens()">توليد الرموز الآن</button>
+            <div id="generated-codes" style="margin-top: 20px; font-family: monospace;"></div>
+        </div>
     </div>
-    <input type="hidden" id="selectedRole" value="manager">
-    <input type="text" id="regCompany" placeholder="اسم الشركة">
-    <input type="email" id="regEmail" placeholder="البريد الإلكتروني">
-    <input type="password" id="regPassword" placeholder="كلمة المرور" oninput="checkPasswordStrength(this.value)">
-    <div style="font-size:0.8rem; margin-bottom:10px;"><span id="pwStrengthLabel"></span></div>
-    <input type="password" id="regPassword2" placeholder="تأكيد كلمة المرور">
-    <div id="companyCodeField" style="display:none;">
-      <input type="text" id="regCompanyCode" placeholder="كود الشركة (يوفره المدير)">
+
+</div>
+
+<div id="chat-widget" class="card">
+    <div style="background: var(--primary-color); color: white; padding: 10px; margin: -20px -20px 10px -20px; border-radius: 10px 10px 0 0;">
+        نقاش داخلي <button onclick="toggleChat()" style="float: left; background: none; border: none; color: white;">✕</button>
     </div>
-    <button class="btn btn-primary" style="width:100%;" onclick="doRegister()">تسجيل</button>
-  </div>
-</div>
-
-<div id="forgotModal" class="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('forgotModal')">&times;</button>
-    <h2>استعادة كلمة المرور</h2>
-    <div id="forgotResult" class="alert alert-success"></div>
-    <div id="forgotError" class="alert alert-danger"></div>
-    <input type="email" id="forgotEmail" placeholder="البريد الإلكتروني">
-    <button class="btn btn-primary" style="width:100%;" onclick="doForgotPassword()">إرسال الرابط</button>
-  </div>
-</div>
-
-<div id="adminModal" class="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('adminModal')">&times;</button>
-    <h2>دخول المطور/الإدارة العليا</h2>
-    <div id="adminError" class="alert alert-danger"></div>
-    <input type="password" id="adminPassword" placeholder="رمز الدخول السري">
-    <button class="btn btn-danger" style="width:100%;" onclick="doAdminLogin()">دخول</button>
-  </div>
-</div>
-
-<div id="saveServiceModal" class="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('saveServiceModal')">&times;</button>
-    <h2>حفظ خدمة للمكتبة</h2>
-    <input type="text" id="ssName" placeholder="اسم الخدمة / البند">
-    <input type="number" id="ssPrice" placeholder="السعر الافتراضي">
-    <button class="btn btn-primary" style="width:100%;" onclick="saveNewService()">حفظ الخدمة</button>
-  </div>
+    <div id="chat-messages" style="height: 200px; overflow-y: auto; font-size: 13px;"></div>
+    <input type="text" id="chat-input" placeholder="اكتب ملاحظة..." style="width: 80%;">
+    <button onclick="app.sendChat()">></button>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, onSnapshot, serverTimestamp, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AlzaSyChxttvld06MmISTD4JB11mYZNA06AP4T8",
-  authDomain: "proposaliq-97d80.firebaseapp.com",
-  projectId: "proposaliq-97d80",
-  storageBucket: "proposaliq-97d80.firebasestorage.app",
-  messagingSenderId: "183384951638",
-  appId: "1:183384951638:web:8c0d6ce87c0c22f14064f7"
-};
+    const firebaseConfig = {
+        apiKey: "ضع_مفتاحك_هنا",
+        authDomain: "proposaliq.firebaseapp.com",
+        projectId: "proposaliq",
+        storageBucket: "proposaliq.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+    const fb = initializeApp(firebaseConfig);
+    const auth = getAuth(fb);
+    const db = getFirestore(fb);
 
-const PLAN_CONFIG = {
-  free: {name: 'مجاني', months: 0, quota: 3},
-  basic_monthly: {name: 'شهري أساسي', months: 1, quota: 30},
-  advanced_monthly: {name: 'شهري متقدم', months: 1, quota: 150},
-  basic_yearly: {name: 'سنوي أساسي', months: 12, quota: 360},
-  advanced_yearly: {name: 'سنوي متقدم', months: 12, quota: 1800},
-  enterprise_yearly: {name: 'سنوي مؤسسي', months: 12, quota: 99999}
-};
+    window.app = {
+        // تسجيل الدخول
+        async login() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                Swal.fire('تمت العملية', 'مرحباً بك مجدداً', 'success');
+            } catch (e) { Swal.fire('خطأ', 'بيانات الدخول غير صحيحة', 'error'); }
+        },
 
-const ADMIN_PASS = 'ARKANE2026';
-let currentUser = null;
-let currentUserDoc = null;
-let currentProposalId = null;
-let prevPage = 'pageHome';
-let liveUnsubscribe = null;
-let chatUnsubscribe = null;
-let notificationsInterval = null;
+        // توليد الرموز (خاص بالإدارة)
+        async generateTokens() {
+            const plan = document.getElementById('token-plan').value;
+            const count = document.getElementById('token-count').value;
+            let codes = [];
+            for(let i=0; i<count; i++) {
+                const code = "IQ-" + Math.random().toString(36).substring(7).toUpperCase();
+                await addDoc(collection(db, "tokens"), { code, plan, used: false });
+                codes.push(code);
+            }
+            document.getElementById('generated-codes').innerHTML = codes.join("<br>");
+        },
 
-window.escapeHtml = str => {
-  if (!str) return '';
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-};
-window.formatAmount = n => Math.round(n||0).toLocaleString('ar-SA');
-window.formatExpiry = iso => { const d=new Date(iso); return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); };
-window.showError = (id,msg) => { const el=document.getElementById(id); if(!el)return; el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',4000); };
-window.generateCompanyCode = () => 'CO-'+Array.from({length:6}, ()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
-window.generateRef = count => 'PQ-'+new Date().getFullYear()+'-'+String((count||0)+1).padStart(3,'0');
+        // إظهار نافذة الدفع
+        showPayment() {
+            Swal.fire({
+                title: 'اختر باقة الاشتراك',
+                html: `
+                    <button class="btn btn-primary" onclick="app.pay('basic')">الأساسية (99 ريال)</button><br><br>
+                    <button class="btn btn-primary" onclick="app.pay('pro')">المتقدمة (249 ريال)</button>
+                `,
+                showConfirmButton: false
+            });
+        },
 
-window.showPage = id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  prevPage = document.querySelector('.page.active')?.id || 'pageHome';
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  window.scrollTo(0,0);
-  if (id==='pageManagerDash') { refreshManagerDash(); loadSavedServices(); }
-  if (id==='pageAgentDash') { refreshAgentDash(); loadSavedServices(); startSmartNotifications(); }
-  if (id==='pageAdmin') renderTokensList();
-  if (id==='pageNewProposal') {
-    const tb=document.getElementById('itemsBody');
-    if(tb&&tb.children.length===0){addItem();addItem();addItem();}
-    document.getElementById('propSubject').value = '';
-    document.getElementById('propClientCompany').value = '';
-    document.getElementById('propClientName').value = '';
-    document.getElementById('propClientEmail').value = '';
-    document.getElementById('propClientPhone').value = '';
-    document.getElementById('propDiscount').value = '0';
-    recalcTotals();
-  }
-};
-
-window.goBack = () => showPage(prevPage);
-window.goToDashboard = () => {
-  if(!currentUser) return showPage('pageHome');
-  showPage(currentUserDoc?.role==='manager'?'pageManagerDash':'pageAgentDash');
-};
-window.showModal = id => document.getElementById(id)?.classList.add('open');
-window.closeModal = id => document.getElementById(id)?.classList.remove('open');
-
-window.selectRole = role => {
-  document.getElementById('selectedRole').value = role;
-  document.getElementById('roleBtnManager').className = role==='manager'?'btn btn-primary':'btn btn-outline';
-  document.getElementById('roleBtnAgent').className = role==='agent'?'btn btn-primary':'btn btn-outline';
-  document.getElementById('companyCodeField').style.display = role==='agent'?'block':'none';
-};
-
-window.checkPasswordStrength = pw => {
-  const label=document.getElementById('pwStrengthLabel');
-  if(!label)return;
-  if(!pw){label.textContent='';return;}
-  let score=0;
-  if(pw.length>=8)score++; if(pw.length>=12)score++;
-  if(/[A-Z]/.test(pw))score++; if(/[0-9]/.test(pw))score++;
-  if(/[^A-Za-z0-9]/.test(pw))score++;
-  if(score<=2){label.textContent='ضعيفة'; label.style.color='var(--danger)';}
-  else if(score<=3){label.textContent='متوسطة'; label.style.color='var(--warning)';}
-  else{label.textContent='قوية'; label.style.color='var(--success)';}
-};
-
-window.doRegister = async () => {
-  const role = document.getElementById('selectedRole').value;
-  const company = document.getElementById('regCompany').value.trim();
-  const email = document.getElementById('regEmail').value.trim().toLowerCase();
-  const pass = document.getElementById('regPassword').value;
-  const pass2 = document.getElementById('regPassword2').value;
-  const code = document.getElementById('regCompanyCode').value.trim().toUpperCase();
-
-  if (!company||!email||!pass) return showError('regError', 'يرجى ملء جميع الحقول');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('regError', 'صيغة البريد غير صحيحة');
-  if (pass.length < 8) return showError('regError', 'كلمة المرور 8 أحرف على الأقل');
-  if (pass !== pass2) return showError('regError', 'كلمتا المرور غير متطابقتين');
-
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    const uid = cred.user.uid;
-    if (role === 'manager') {
-      const companyCode = generateCompanyCode();
-      const companyRef = await addDoc(collection(db, 'companies'), {
-        name: company, code: companyCode, managerId: uid, plan:'free', quota: 3, quotaUsed:0, expiry:null, createdAt: serverTimestamp()
-      });
-      await setDoc(doc(db, 'users', uid), {
-        email, company, role:'manager', companyId: companyRef.id, plan:'free', quota: 3, quotaUsed:0, expiry:null, createdAt: serverTimestamp(), targetGoal: 100000
-      });
-    } else {
-      if (!code) return showError('regError', 'أدخل كود الشركة من مديرك');
-      const q = query(collection(db, 'companies'), where('code','==',code));
-      const snap = await getDocs(q);
-      if (snap.empty) return showError('regError', 'كود الشركة غير صحيح');
-      const companyDoc = snap.docs[0];
-      const companyData = companyDoc.data();
-      await setDoc(doc(db, 'users', uid), {
-        email, company: companyData.name, role:'agent', companyId: companyDoc.id, plan: companyData.plan||'free', quota: companyData.quota||3, quotaUsed: 0, expiry: companyData.expiry||null, createdAt: serverTimestamp(), targetGoal: 50000
-      });
-    }
-    closeModal('registerModal');
-  } catch(e) {
-    showError('regError', e.message);
-  }
-};
-
-window.doLogin = async () => {
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  const pass = document.getElementById('loginPassword').value;
-  if(!email||!pass) return showError('loginError', 'أدخل البريد وكلمة المرور');
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-    closeModal('loginModal');
-  } catch(e) {
-    showError('loginError', 'البريد أو كلمة المرور غير صحيحة');
-  }
-};
-
-window.doForgotPassword = async () => {
-  const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
-  if(!email) return showError('forgotError', 'أدخل بريدك الإلكتروني');
-  try {
-    await sendPasswordResetEmail(auth, email);
-    document.getElementById('forgotResult').style.display='block';
-    document.getElementById('forgotResult').innerHTML = 'تم إرسال رابط إعادة التعيين';
-  } catch(e) {
-    document.getElementById('forgotResult').style.display='block';
-    document.getElementById('forgotResult').innerHTML = 'تم الإرسال (إذا كان مسجلاً)';
-  }
-};
-
-window.logout = async () => {
-  if(liveUnsubscribe) liveUnsubscribe();
-  if(chatUnsubscribe) chatUnsubscribe();
-  if(notificationsInterval) clearInterval(notificationsInterval);
-  await signOut(auth);
-  currentUser=null; currentUserDoc=null;
-  updateNavBar(null);
-  showPage('pageHome');
-};
-
-onAuthStateChanged(auth, async user => {
-  if (user) {
-    currentUser = user;
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (snap.exists()) {
-      currentUserDoc = {id:user.uid, ...snap.data()};
-      updateNavBar(currentUserDoc);
-      goToDashboard();
-    } else {
-      setTimeout(async()=>{
-        const retrySnap = await getDoc(doc(db, 'users', user.uid));
-        if (retrySnap.exists()) {
-          currentUserDoc = {id:user.uid, ...retrySnap.data()};
-          updateNavBar(currentUserDoc);
-          goToDashboard();
-        } else logout();
-      }, 1000);
-    }
-  } else {
-    currentUser=null; currentUserDoc=null;
-    updateNavBar(null);
-    if(document.getElementById('pageHome').classList.contains('active')) return;
-    showPage('pageHome');
-  }
-});
-
-function updateNavBar(u) {
-  const nav = document.getElementById('navActions');
-  if (!nav) return;
-  if (!u) {
-    nav.innerHTML=`<button class="btn btn-outline btn-sm" onclick="showModal('loginModal')">دخول</button><button class="btn btn-primary btn-sm" onclick="showModal('registerModal')">ابدأ مجاناً</button>`;
-    return;
-  }
-  const badge = u.role==='manager'?'<span style="font-size:0.75rem; background:var(--primary); color:white; padding:2px 6px; border-radius:4px;">مدير</span>':'<span style="font-size:0.75rem; background:var(--muted); color:white; padding:2px 6px; border-radius:4px;">مندوب</span>';
-  nav.innerHTML=`${badge} <span style="font-size:0.9rem; font-weight:600;">${escapeHtml(u.company||u.email)}</span>
-  ${u.role==='agent'?'<button class="btn btn-primary btn-sm" onclick="showPage(\'pageNewProposal\')"><i class="fas fa-plus"></i> عرض جديد</button>':''}
-  <button class="btn btn-outline btn-sm" onclick="logout()">خروج</button>`;
-}
-
-window.doAdminLogin = () => {
-  if (document.getElementById('adminPassword').value===ADMIN_PASS) {
-    closeModal('adminModal'); showPage('pageAdmin');
-    document.getElementById('adminPassword').value='';
-  } else showError('adminError', 'كلمة المرور غير صحيحة');
-};
-
-window.copyCompanyCode = async () => {
-  if (!currentUserDoc?.companyId) return;
-  const snap = await getDoc(doc(db, 'companies', currentUserDoc.companyId));
-  if (snap.exists()) {
-    navigator.clipboard?.writeText(snap.data().code);
-    Swal.fire({toast:true, position:'top-end', icon:'success', title:'تم نسخ الكود', showConfirmButton:false, timer:2000});
-  }
-};
-
-window.switchManagerTab = tab => {
-  document.getElementById('mgrTabOverview').style.display = tab==='overview'?'block':'none';
-  document.getElementById('mgrTabLeaderboard').style.display = tab==='leaderboard'?'block':'none';
-  document.getElementById('mgrTabCRM').style.display = tab==='crm'?'block':'none';
-  document.getElementById('mgrTabReports').style.display = tab==='reports'?'block':'none';
-  
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
-  
-  if(tab==='leaderboard') renderLeaderboard();
-  if(tab==='crm') renderCRM();
-};
-
-async function fetchCompanyProposals() {
-  const propsQ = query(collection(db, 'proposals'), where('companyId','==',currentUserDoc.companyId));
-  const snap = await getDocs(propsQ);
-  return snap.docs.map(d=>({id:d.id,...d.data()}));
-}
-
-async function refreshManagerDash() {
-  if (!currentUserDoc || currentUserDoc.role!=='manager') return;
-  document.getElementById('mgrName').textContent = escapeHtml(currentUserDoc.company||currentUserDoc.email);
-  if (currentUserDoc.companyId) {
-    const coSnap = await getDoc(doc(db, 'companies', currentUserDoc.companyId));
-    if (coSnap.exists()) document.getElementById('mgrCompanyCode').textContent = coSnap.data().code;
-  }
-  
-  const isActive = currentUserDoc.plan && currentUserDoc.plan!=='free';
-  const cfg = PLAN_CONFIG[currentUserDoc.plan]||PLAN_CONFIG.free;
-  document.getElementById('mgrPlanBadge').textContent = cfg.name;
-  if(isActive && currentUserDoc.expiry){
-    document.getElementById('mgrSubInfo').style.display='block';
-    document.getElementById('mgrSubExpiry').textContent = formatExpiry(currentUserDoc.expiry);
-    document.getElementById('mgrSubQuota').textContent = Math.max(0, (currentUserDoc.quota||0)-(currentUserDoc.quotaUsed||0));
-  } else document.getElementById('mgrSubInfo').style.display='none';
-  
-  renderActivateSection('mgrActivateSection', 'mgrActivateErr', isActive);
-  
-  const agentsQ = query(collection(db, 'users'), where('companyId','==', currentUserDoc.companyId), where('role','==','agent'));
-  const agentsSnap = await getDocs(agentsQ);
-  document.getElementById('mgrTotalAgents').textContent = agentsSnap.size;
-  const agentsList = document.getElementById('mgrAgentsList');
-  agentsList.innerHTML='';
-  if (agentsSnap.empty) agentsList.innerHTML='<div style="text-align:center; padding:10px; color:var(--muted);">لا يوجد مندوبون</div>';
-  else agentsSnap.forEach(ag=>{
-    agentsList.innerHTML+=`<div style="padding:10px; border:1px solid var(--border); border-radius:8px;">${escapeHtml(ag.data().email)}</div>`;
-  });
-  
-  const allProps = await fetchCompanyProposals();
-  document.getElementById('mgrTotalProps').textContent = allProps.length;
-  document.getElementById('mgrSentProps').textContent = allProps.filter(p=>p.status==='sent'||p.status==='approved').length;
-  document.getElementById('mgrAcceptedProps').textContent = allProps.filter(p=>p.status==='accepted').length;
-  
-  const pending = allProps.filter(p=>p.status==='pending');
-  document.getElementById('mgrPendingCount').textContent = pending.length;
-  const approvalsList = document.getElementById('mgrApprovalsList');
-  approvalsList.innerHTML='';
-  if (pending.length===0) approvalsList.innerHTML='<div style="text-align:center; color:var(--muted); padding:10px;">لا توجد عروض</div>';
-  else pending.forEach(p=>{
-    approvalsList.innerHTML+=`<div style="padding:10px; border:1px solid var(--border); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-      <div><strong>${escapeHtml(p.subject)}</strong><br><small>${escapeHtml(p.clientCompany)}</small></div>
-      <div>
-        <button class="btn btn-ghost btn-sm" onclick="openProposal('${p.id}')">عرض</button>
-        <button class="btn btn-success btn-sm" onclick="approveProposal('${p.id}')">اعتماد</button>
-      </div>
-    </div>`;
-  });
-  
-  const allPropsDiv = document.getElementById('mgrAllProposals');
-  allPropsDiv.innerHTML='';
-  allProps.slice().sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(p=>{
-    allPropsDiv.innerHTML+=`<div style="padding:10px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;">
-      <div><strong>${escapeHtml(p.subject)}</strong> <span class="status-badge s-${p.status}">${statusMap()[p.status]?.[0]||p.status}</span></div>
-      <button class="btn btn-outline btn-sm" onclick="openProposal('${p.id}')">عرض والتفاعل</button>
-    </div>`;
-  });
-  
-  startLiveTracking();
-}
-
-async function renderLeaderboard() {
-  const list = document.getElementById('mgrLeaderboardList');
-  list.innerHTML = 'جاري التحميل...';
-  const agentsQ = query(collection(db, 'users'), where('companyId','==', currentUserDoc.companyId), where('role','==','agent'));
-  const agentsSnap = await getDocs(agentsQ);
-  const allProps = await fetchCompanyProposals();
-  
-  let stats = [];
-  agentsSnap.forEach(ag => {
-    const d = ag.data();
-    const props = allProps.filter(p=>p.userId===ag.id);
-    const accepted = props.filter(p=>p.status==='accepted');
-    const rev = accepted.reduce((sum, p)=>sum+(p.total||0), 0);
-    const closeRate = props.length>0 ? Math.round((accepted.length/props.length)*100) : 0;
-    stats.push({ email: d.email, rev, closeRate, count: accepted.length });
-  });
-  
-  stats.sort((a,b)=> b.rev - a.rev);
-  list.innerHTML = '';
-  stats.forEach((s, idx) => {
-    list.innerHTML+=`<div class="leaderboard-item">
-      <div><strong>#${idx+1} ${escapeHtml(s.email)}</strong> <span style="color:var(--muted); font-size:0.8rem;">(إغلاق: ${s.closeRate}%)</span></div>
-      <strong style="color:var(--success);">${formatAmount(s.rev)} ريال</strong>
-    </div>`;
-  });
-}
-
-async function renderCRM() {
-  const search = document.getElementById('crmSearch').value.toLowerCase();
-  const list = document.getElementById('mgrCRMList');
-  const allProps = await fetchCompanyProposals();
-  
-  let clients = {};
-  allProps.forEach(p => {
-    if(p.status==='draft') return;
-    const cName = p.clientCompany || 'غير محدد';
-    if(!clients[cName]) clients[cName] = { name: cName, totalRev: 0, acceptedCount: 0, propsCount: 0, lastContact: p.createdAt?.seconds };
-    clients[cName].propsCount++;
-    if(p.status==='accepted') {
-      clients[cName].acceptedCount++;
-      clients[cName].totalRev += (p.total||0);
-    }
-    if(p.createdAt?.seconds > clients[cName].lastContact) clients[cName].lastContact = p.createdAt?.seconds;
-  });
-  
-  list.innerHTML = '';
-  Object.values(clients).filter(c=>c.name.toLowerCase().includes(search)).forEach(c => {
-    list.innerHTML += `<div class="crm-card">
-      <h4 style="color:var(--primary);">${escapeHtml(c.name)}</h4>
-      <p style="font-size:0.85rem; color:var(--muted);">عروض: ${c.propsCount} | مقبولة: ${c.acceptedCount}</p>
-      <p style="font-size:0.9rem; font-weight:bold;">إجمالي الإيرادات: ${formatAmount(c.totalRev)} ريال</p>
-    </div>`;
-  });
-}
-
-window.generateMonthlyReportPDF = async () => {
-  const area = document.getElementById('reportPreviewArea');
-  area.style.display='block';
-  area.innerHTML = `<h3>تقرير الأداء الشهري - ${escapeHtml(currentUserDoc.company)}</h3><p>جاري تجميع البيانات...</p>`;
-  
-  const allProps = await fetchCompanyProposals();
-  const thisMonth = new Date().getMonth();
-  const monthlyProps = allProps.filter(p => new Date(p.createdAt?.toDate()||new Date()).getMonth() === thisMonth);
-  
-  const totalRev = monthlyProps.filter(p=>p.status==='accepted').reduce((s,p)=>s+(p.total||0), 0);
-  const accepted = monthlyProps.filter(p=>p.status==='accepted').length;
-  
-  let html = `
-    <div style="padding:20px; text-align:center; border:2px solid var(--primary);">
-      <h2>تقرير أداء المبيعات (المنصة الذكية)</h2>
-      <hr>
-      <div style="display:flex; justify-content:space-around; margin-top:20px;">
-        <div><h4>العروض المرسلة</h4><h2>${monthlyProps.length}</h2></div>
-        <div><h4>العروض المغلقة</h4><h2 style="color:green;">${accepted}</h2></div>
-        <div><h4>إجمالي الإيرادات</h4><h2 style="color:blue;">${formatAmount(totalRev)} ريال</h2></div>
-      </div>
-      <hr>
-      <p style="color:gray;">تم الإنشاء آلياً بواسطة ProposalIQ</p>
-    </div>
-  `;
-  area.innerHTML = html;
-  setTimeout(() => {
-    html2pdf().set({margin:1, filename:'Report.pdf', image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'in',format:'letter',orientation:'portrait'}}).from(area).save();
-  }, 1000);
-}
-
-function startLiveTracking() {
-  if (liveUnsubscribe) liveUnsubscribe();
-  if (!currentUserDoc?.companyId) return;
-  const liveQ = query(collection(db, 'proposals'), where('companyId','==',currentUserDoc.companyId), where('isClientLive','==',true));
-  liveUnsubscribe = onSnapshot(liveQ, snapshot => {
-    snapshot.docChanges().forEach(change => {
-      if (change.type === 'added' || change.type === 'modified') {
-        const d = change.doc.data();
-        if (d.isClientLive) {
-          Swal.fire({toast:true, position: 'top-end', icon:'info', title: `العميل يقرأ العرض: ${escapeHtml(d.subject)}`, showConfirmButton:false, timer: 5000});
+        async pay(plan) {
+            Swal.fire('سيتم توجيهك لبوابة الدفع...', '', 'info');
+            // هنا يتم الربط مع Stripe أو Moyasar لاحقاً
         }
-      }
-    });
-  });
-}
+    };
 
-function startSmartNotifications() {
-  if (notificationsInterval) clearInterval(notificationsInterval);
-  notificationsInterval = setInterval(async () => {
-    if(!currentUserDoc || currentUserDoc.role!=='agent') return;
-    const propsQ = query(collection(db,'proposals'), where('userId','==',currentUser.uid), where('status','==','sent'));
-    const snap = await getDocs(propsQ);
-    let notifsHTML = '';
-    const now = new Date();
-    snap.docs.forEach(d => {
-      const p = d.data();
-      const sentDate = p.updatedAt?.toDate() || p.createdAt?.toDate();
-      if(sentDate) {
-        const diffDays = Math.floor((now - sentDate) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 3) {
-          notifsHTML += `<div class="alert alert-warning" style="display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="fas fa-bell"></i> العميل (<b>${escapeHtml(p.clientCompany)}</b>) لم يرد منذ 3 أيام. هل نرسل خصم ذكي؟</span>
-            <button class="btn btn-sm btn-primary" onclick="applySmartRenewal('${d.id}')">تطبيق خصم وتجديد</button>
-          </div>`;
+    // مراقب الحالة (التأكد من الدخول وعرض الصفحة المناسبة)
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const uDoc = await getDoc(doc(db, "users", user.uid));
+            const userData = uDoc.data();
+            if(userData.role === 'admin') document.getElementById('admin-btn').style.display = 'inline-block';
+            
+            document.getElementById('user-info').innerHTML = `${user.email} | <button onclick="signOut(auth)">خروج</button>`;
+            window.showPage('dashboard-page');
+            loadProposals(user.uid);
+        } else {
+            window.showPage('login-page');
         }
-      }
     });
-    document.getElementById('agentNotifications').innerHTML = notifsHTML;
-  }, 10000); // Check periodically
-}
 
-window.applySmartRenewal = async (id) => {
-  const snap = await getDoc(doc(db, 'proposals', id));
-  if(!snap.exists()) return;
-  const p = snap.data();
-  const newDiscount = (p.discount||0) + (p.subtotal * 0.05); // +5% discount
-  const afterD = Math.max(0, p.subtotal - newDiscount);
-  const vat = afterD * 0.15;
-  const total = afterD + vat;
-  await updateDoc(doc(db, 'proposals', id), {
-    discount: newDiscount, afterDiscount: afterD, vat, total,
-    status: 'pending', // Requires manager approval again due to discount
-    updatedAt: serverTimestamp()
-  });
-  Swal.fire('تم!', 'تم تطبيق الخصم الذكي، بانتظار اعتماد المدير لإعادة الإرسال.', 'success');
-  refreshAgentDash();
-};
+    function loadProposals(uid) {
+        onSnapshot(collection(db, "proposals"), (snap) => {
+            let html = "<table style='width:100%'>";
+            snap.forEach(d => {
+                const p = d.data();
+                html += `<tr><td>${p.client}</td><td>${p.total} ريال</td><td>${p.status}</td></tr>`;
+            });
+            document.getElementById('proposals-list').innerHTML = html + "</table>";
+        });
+    }
 
-async function refreshAgentDash() {
-  if (!currentUserDoc) return;
-  document.getElementById('agentName').textContent = escapeHtml(currentUserDoc.company||currentUserDoc.email);
-  const isActive = currentUserDoc.plan && currentUserDoc.plan!=='free';
-  const cfg = PLAN_CONFIG[currentUserDoc.plan]||PLAN_CONFIG.free;
-  document.getElementById('agentPlanBadge').textContent = cfg.name;
-  if(isActive && currentUserDoc.expiry){
-    document.getElementById('agentSubInfo').style.display='block';
-    document.getElementById('agentSubExpiry').textContent = formatExpiry(currentUserDoc.expiry);
-    document.getElementById('agentSubQuota').textContent = Math.max(0, (currentUserDoc.quota||0)-(currentUserDoc.quotaUsed||0));
-  } else document.getElementById('agentSubInfo').style.display='none';
-  
-  renderActivateSection('agentActivateSection','agentActivateErr',isActive);
-  
-  const propsQ = query(collection(db,'proposals'), where('userId','==',currentUser.uid));
-  const propsSnap = await getDocs(propsQ);
-  const myProps = propsSnap.docs.map(d=>({id:d.id,...d.data()}));
-  
-  document.getElementById('agTotalProps').textContent = myProps.length;
-  document.getElementById('agPending').textContent = myProps.filter(p=>p.status==='pending').length;
-  const accepted = myProps.filter(p=>p.status==='accepted');
-  document.getElementById('agAccepted').textContent = accepted.length;
-  
-  // Goals logic
-  const achievedRev = accepted.reduce((s,p)=>s+(p.total||0), 0);
-  const target = currentUserDoc.targetGoal || 50000;
-  document.getElementById('agentGoalAchieved').textContent = formatAmount(achievedRev);
-  document.getElementById('agentGoalTarget').textContent = formatAmount(target);
-  const percent = Math.min(100, Math.round((achievedRev/target)*100));
-  const pb = document.getElementById('agentGoalProgress');
-  pb.style.width = percent + '%';
-  if(percent >= 100) pb.style.backgroundColor = 'var(--success)';
-  
-  const container = document.getElementById('agentProposalList');
-  container.innerHTML='';
-  myProps.slice().sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(p=>{
-    const stat = statusMap()[p.status]||['مجهول','s-draft'];
-    container.innerHTML+=`<div style="padding:10px; border:1px solid var(--border); margin-bottom:10px; border-radius:8px; display:flex; justify-content:space-between;">
-      <div><strong>${escapeHtml(p.subject)}</strong> <br><small>${escapeHtml(p.clientCompany)}</small></div>
-      <div style="text-align:left;">
-        <span class="status-badge ${stat[1]}">${stat[0]}</span><br>
-        <button class="btn btn-ghost btn-sm" onclick="openProposal('${p.id}')" style="margin-top:5px;">عرض</button>
-      </div>
-    </div>`;
-  });
-}
-
-function statusMap() {
-  return {
-    'draft': ['مسودة','s-draft'], 'pending': ['بانتظار الاعتماد','s-pending'],
-    'approved': ['معتمد - أرسله للعميل','s-accepted'], 'sent': ['مُرسل للعميل','s-sent'],
-    'accepted': ['مقبول (مغلق)','s-accepted'], 'rejected': ['مرفوض','s-rejected']
-  };
-}
-
-function renderActivateSection(sectionId, errId, isActive) {
-  const sec = document.getElementById(sectionId);
-  if(!sec)return;
-  if (isActive) {
-    sec.innerHTML=`<span style="font-size:0.8rem; color:var(--muted);">الاشتراك فعّال 🔒</span>`;
-  } else {
-    sec.innerHTML=`<div style="display:flex; gap:5px;"><input id="${sectionId}_code" placeholder="رمز التفعيل" style="margin:0; padding:5px; width:150px;"><button class="btn btn-primary btn-sm" onclick="doActivateDash('${sectionId}_code','${errId}')">تفعيل</button></div><div id="${errId}" style="color:red; font-size:0.8rem; display:none;"></div>`;
-  }
-}
-
-window.doActivateDash = async (inputId, errId) => {
-  const code = document.getElementById(inputId).value.trim().toUpperCase();
-  if(!code) return showError(errId, 'أدخل الرمز');
-  const q = query(collection(db,'tokens'), where('code','==',code), where('used','==',false));
-  const snap = await getDocs(q);
-  if(snap.empty) return showError(errId, 'الرمز غير صحيح أو مستخدم');
-  const tokenDoc = snap.docs[0];
-  const plan = tokenDoc.data().plan;
-  const cfg = PLAN_CONFIG[plan]||{quota:30,months:1};
-  const expiry = new Date(); expiry.setMonth(expiry.getMonth()+cfg.months);
-  
-  await updateDoc(doc(db,'tokens',tokenDoc.id),{used:true, usedBy:currentUser.uid, usedAt:serverTimestamp()});
-  await updateDoc(doc(db,'users',currentUser.uid),{plan, quota:cfg.quota, quotaUsed:0, expiry:expiry.toISOString()});
-  
-  if (currentUserDoc?.companyId) {
-    await updateDoc(doc(db,'companies',currentUserDoc.companyId),{plan, quota:cfg.quota, expiry:expiry.toISOString()});
-    const agentsQ = query(collection(db,'users'), where('companyId','==',currentUserDoc.companyId), where('role','==','agent'));
-    const agSnap = await getDocs(agentsQ);
-    agSnap.forEach(async ag => await updateDoc(doc(db,'users',ag.id),{plan, quota:cfg.quota, expiry:expiry.toISOString()}));
-  }
-  
-  const freshSnap = await getDoc(doc(db,'users',currentUser.uid));
-  currentUserDoc = {id:currentUser.uid,...freshSnap.data()};
-  if(currentUserDoc.role==='manager') refreshManagerDash(); else refreshAgentDash();
-  Swal.fire('تم!', 'تم التفعيل بنجاح', 'success');
-};
-
-window.generateAdminTokens = async () => {
-  const plan = document.getElementById('adminTokenPlan').value;
-  const count = parseInt(document.getElementById('adminTokenCount').value);
-  for(let i=0; i<count; i++){
-    const code = 'PRO-'+Math.random().toString(36).substr(2,8).toUpperCase();
-    await addDoc(collection(db,'tokens'), { code, plan, used:false, createdAt:serverTimestamp() });
-  }
-  renderTokensList();
-};
-
-async function renderTokensList() {
-  const list = document.getElementById('adminTokensList');
-  list.innerHTML='';
-  const q = query(collection(db,'tokens'), where('used','==',false), orderBy('createdAt','desc'));
-  const snap = await getDocs(q);
-  snap.forEach(d=>{
-    const data = d.data();
-    list.innerHTML+=`<div style="display:flex; justify-content:space-between; border-bottom:1px solid #ddd; padding:5px;"><span>${data.code}</span><span class="badge" style="background:#eee;">${data.plan}</span></div>`;
-  });
-}
-
-// Saved Services Logic
-async function loadSavedServices() {
-  if(!currentUserDoc?.companyId) return;
-  const q = query(collection(db,'saved_services'), where('companyId','==',currentUserDoc.companyId));
-  const snap = await getDocs(q);
-  const select = document.getElementById('savedServicesSelect');
-  select.innerHTML = '<option value="">-- اختر خدمة محفوظة --</option>';
-  snap.forEach(d=>{
-    const s = d.data();
-    select.innerHTML += `<option value="${d.id}" data-name="${s.name}" data-price="${s.price}">${s.name} - ${s.price} ريال</option>`;
-  });
-}
-
-window.saveNewService = async () => {
-  const name = document.getElementById('ssName').value;
-  const price = document.getElementById('ssPrice').value;
-  if(!name || !price) return;
-  await addDoc(collection(db,'saved_services'), {
-    companyId: currentUserDoc.companyId, name, price: parseFloat(price)
-  });
-  closeModal('saveServiceModal');
-  loadSavedServices();
-  Swal.fire({toast:true, position:'top-end', title:'تم الحفظ بالمكتبة', icon:'success', showConfirmButton:false, timer:2000});
-};
-
-window.addSavedService = () => {
-  const select = document.getElementById('savedServicesSelect');
-  const opt = select.options[select.selectedIndex];
-  if(!opt.value) return;
-  addItem(opt.getAttribute('data-name'), 1, opt.getAttribute('data-price'));
-  select.value = '';
-};
-
-window.addItem = (name='',qty=1,price=0) => {
-  const tbody=document.getElementById('itemsBody');
-  const row=document.createElement('tr');
-  row.innerHTML=`<td><input placeholder="اسم البند" value="${escapeHtml(name)}" oninput="recalcTotals()"/></td>
-  <td><input type="number" min="1" value="${qty}" style="width:55px;" oninput="recalcTotals()"/></td>
-  <td><input type="number" min="0" value="${price}" oninput="recalcTotals()"/></td>
-  <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove();recalcTotals()">✕</button></td>`;
-  tbody.appendChild(row);
-  recalcTotals();
-};
-
-window.recalcTotals = () => {
-  let subtotal=0;
-  document.querySelectorAll('#itemsBody tr').forEach(row=>{
-    const inputs=row.querySelectorAll('input');
-    subtotal+=(parseFloat(inputs[1]?.value)||0)*(parseFloat(inputs[2]?.value)||0);
-  });
-  const discount=parseFloat(document.getElementById('propDiscount').value)||0;
-  const afterDiscount=Math.max(0,subtotal-discount);
-  const vat=afterDiscount*0.15;
-  const total=afterDiscount+vat;
-  document.getElementById('totSubtotal').textContent=formatAmount(subtotal)+' ريال';
-  document.getElementById('totAfterDiscount').textContent=formatAmount(afterDiscount)+' ريال';
-  document.getElementById('totVAT').textContent=formatAmount(vat)+' ريال';
-  document.getElementById('totFinal').textContent=formatAmount(total)+' ريال';
-  return {subtotal,discount,afterDiscount,vat,total};
-};
-
-window.saveProposal = async () => {
-  if (currentUserDoc.role!=='manager' && Math.max(0,(currentUserDoc.quota||0)-(currentUserDoc.quotaUsed||0)) <= 0) {
-    return Swal.fire('تنبيه', 'نفذ رصيد العروض، يرجى الترقية', 'error');
-  }
-
-  const subject = document.getElementById('propSubject').value;
-  const clientCompany = document.getElementById('propClientCompany').value;
-  if(!subject||!clientCompany) return Swal.fire('خطأ', 'أكمل بيانات العميل والموضوع', 'error');
-  
-  const items=[];
-  document.querySelectorAll('#itemsBody tr').forEach(row=>{
-    const inputs=row.querySelectorAll('input');
-    if(inputs[0].value) items.push({name:inputs[0].value, qty:parseFloat(inputs[1].value)||1, price:parseFloat(inputs[2].value)||0});
-  });
-  if(items.length===0) return Swal.fire('خطأ', 'أضف بنداً واحداً على الأقل', 'error');
-  
-  const totals = recalcTotals();
-  const ref = generateRef();
-  
-  await addDoc(collection(db,'proposals'), {
-    userId: currentUser.uid, companyId: currentUserDoc.companyId, ref, subject, clientCompany,
-    clientName: document.getElementById('propClientName').value, clientEmail: document.getElementById('propClientEmail').value,
-    items, ...totals, status: currentUserDoc.role==='manager'?'approved':'pending',
-    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-  });
-  
-  if(currentUserDoc.role!=='manager') await updateDoc(doc(db,'users',currentUser.uid),{quotaUsed: increment(1)});
-  
-  Swal.fire('نجاح', 'تم حفظ العرض', 'success');
-  goToDashboard();
-};
-
-window.openProposal = async (id) => {
-  currentProposalId = id;
-  const snap = await getDoc(doc(db,'proposals',id));
-  if(!snap.exists()) return;
-  const p = snap.data();
-  
-  // Render Proposal
-  let html = `<div style="padding:20px; font-family:Arial,sans-serif;">
-    <h1 style="color:var(--primary); text-align:center;">${escapeHtml(p.subject)}</h1>
-    <div style="display:flex; justify-content:space-between; margin-bottom:20px; border-bottom:2px solid #eee; padding-bottom:10px;">
-      <div><strong>العميل:</strong> ${escapeHtml(p.clientCompany)}<br><strong>عناية:</strong> ${escapeHtml(p.clientName)}</div>
-      <div style="text-align:left;"><strong>رقم المرجع:</strong> ${p.ref}<br><strong>التاريخ:</strong> ${new Date(p.createdAt?.toDate()).toLocaleDateString('ar-SA')}</div>
-    </div>
-    <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
-      <tr style="background:#f8fafc; border-bottom:2px solid #cbd5e1;">
-        <th style="padding:10px; text-align:right;">البيان</th><th style="padding:10px;">الكمية</th><th style="padding:10px;">السعر</th><th style="padding:10px;">المجموع</th>
-      </tr>`;
-  p.items.forEach(item=>{
-    html+=`<tr>
-      <td style="padding:10px; border-bottom:1px solid #eee;">${escapeHtml(item.name)}</td>
-      <td style="padding:10px; border-bottom:1px solid #eee;">${item.qty}</td>
-      <td style="padding:10px; border-bottom:1px solid #eee;">${item.price}</td>
-      <td style="padding:10px; border-bottom:1px solid #eee;">${item.qty*item.price}</td>
-    </tr>`;
-  });
-  html += `</table>
-    <div style="text-align:left; background:#f8fafc; padding:15px; border-radius:8px; width:fit-content; margin-left:auto;">
-      الإجمالي الفرعي: <strong>${formatAmount(p.subtotal)}</strong><br>
-      الخصم: <strong style="color:red;">${formatAmount(p.discount)}</strong><br>
-      ضريبة القيمة المضافة: <strong>${formatAmount(p.vat)}</strong><br>
-      <h3 style="color:var(--primary); margin-top:10px;">الإجمالي النهائي: ${formatAmount(p.total)} ريال</h3>
-    </div>
-  </div>`;
-  
-  document.getElementById('proposalRenderArea').innerHTML = html;
-  
-  // Actions Area
-  const actArea = document.getElementById('propActionsArea');
-  actArea.innerHTML = '';
-  if(currentUserDoc.role==='manager' && p.status==='pending') {
-    actArea.innerHTML += `<button class="btn btn-success" onclick="approveProposal('${id}')">اعتماد العرض</button>
-                          <button class="btn btn-danger" onclick="rejectProposal('${id}')">رفض العرض</button>`;
-  }
-  if(p.status==='approved') {
-    actArea.innerHTML += `<button class="btn btn-primary" onclick="markAsSent('${id}')">تأكيد الإرسال للعميل</button>`;
-  }
-  if(p.status==='sent') {
-    actArea.innerHTML += `<button class="btn btn-success" onclick="markAsAccepted('${id}')">تم قبول العرض (إغلاق الصفقة)</button>`;
-  }
-  if(p.status==='accepted') {
-    actArea.innerHTML += `<button class="btn btn-primary" style="background:#0f172a;" onclick="generateContract()"><i class="fas fa-file-contract"></i> توليد العقد القانوني</button>`;
-  }
-  
-  loadInternalChat(id);
-  showPage('pageProposalView');
-};
-
-window.approveProposal = async id => {
-  await updateDoc(doc(db,'proposals',id), {status:'approved', approvedBy:currentUser.uid, updatedAt:serverTimestamp()});
-  Swal.fire('تم الاعتماد', 'جاهز للإرسال', 'success'); goBack();
-};
-window.rejectProposal = async id => {
-  const reason = prompt('سبب الرفض:');
-  await updateDoc(doc(db,'proposals',id), {status:'rejected', rejectReason:reason||'', updatedAt:serverTimestamp()});
-  goBack();
-};
-window.markAsSent = async id => {
-  await updateDoc(doc(db,'proposals',id), {status:'sent', updatedAt:serverTimestamp()});
-  Swal.fire('تم', 'سُجل كمرسل', 'success'); goBack();
-};
-window.markAsAccepted = async id => {
-  await updateDoc(doc(db,'proposals',id), {status:'accepted', acceptedAt:serverTimestamp()});
-  Swal.fire('مبروك!', 'تم إغلاق الصفقة بنجاح', 'success'); goBack();
-};
-
-window.generateContract = async () => {
-  if(!currentProposalId) return;
-  const snap = await getDoc(doc(db,'proposals',currentProposalId));
-  const p = snap.data();
-  const cArea = document.getElementById('contractRenderArea');
-  cArea.innerHTML = `
-    <h1 style="text-align:center; margin-bottom:20px; font-family:'Times New Roman', serif;">عقد اتفاق وتقديم خدمات</h1>
-    <p>إنه في يوم ${new Date().toLocaleDateString('ar-SA')}، تم الاتفاق بين كل من:</p>
-    <p><strong>الطرف الأول (مقدم الخدمة):</strong> ${escapeHtml(currentUserDoc.company)}</p>
-    <p><strong>الطرف الثاني (العميل):</strong> ${escapeHtml(p.clientCompany)} ويمثلها الأستاذ/ة ${escapeHtml(p.clientName)}</p>
-    <h3 style="margin-top:20px;">تمهيد:</h3>
-    <p>حيث أن الطرف الثاني يرغب في الحصول على الخدمات الموضحة في العرض الفني والمالي رقم (${p.ref})، فقد اتفق الطرفان على ما يلي:</p>
-    <h3 style="margin-top:20px;">البند الأول: موضوع العقد</h3>
-    <p>يعتبر التمهيد السابق والعرض رقم (${p.ref}) جزءاً لا يتجزأ من هذا العقد.</p>
-    <h3 style="margin-top:20px;">البند الثاني: القيمة المالية</h3>
-    <p>يلتزم الطرف الثاني بدفع مبلغ إجمالي قدره <strong>${formatAmount(p.total)} ريال سعودي</strong> شامل ضريبة القيمة المضافة، نظير الخدمات المقدمة.</p>
-    <h3 style="margin-top:20px;">البند الثالث: الأحكام العامة (القانون السعودي)</h3>
-    <p>يخضع هذا العقد للأنظمة واللوائح المعمول بها في المملكة العربية السعودية، وفي حال نشوء أي خلاف يتم حله ودياً، وإلا يحال للمحاكم المختصة.</p>
-    <div style="display:flex; justify-content:space-between; margin-top:50px;">
-      <div><strong>توقيع الطرف الأول:</strong><br><br>____________________</div>
-      <div><strong>توقيع الطرف الثاني:</strong><br><br>____________________</div>
-    </div>
-  `;
-  showPage('pageContract');
-};
-
-window.downloadContractPDF = () => {
-  const el = document.getElementById('contractRenderArea');
-  html2pdf().from(el).save('Contract.pdf');
-};
-
-function loadInternalChat(propId) {
-  if(chatUnsubscribe) chatUnsubscribe();
-  const box = document.getElementById('internalChatBox');
-  const q = query(collection(db,'proposals',propId,'comments'), orderBy('createdAt','asc'));
-  chatUnsubscribe = onSnapshot(q, snap => {
-    box.innerHTML = '';
-    snap.docs.forEach(d => {
-      const msg = d.data();
-      const isMe = msg.userId === currentUser.uid;
-      box.innerHTML += `<div class="chat-msg ${isMe?'msg-self':'msg-other'}">
-        <div style="font-size:0.7rem; opacity:0.8; margin-bottom:3px;">${escapeHtml(msg.senderName)}</div>
-        <div>${escapeHtml(msg.text)}</div>
-      </div>`;
-    });
-    box.scrollTop = box.scrollHeight;
-  });
-}
-
-window.sendInternalMessage = async () => {
-  if(!currentProposalId) return;
-  const inp = document.getElementById('internalChatInput');
-  const text = inp.value.trim();
-  if(!text) return;
-  await addDoc(collection(db,'proposals',currentProposalId,'comments'), {
-    text, userId: currentUser.uid, senderName: currentUserDoc.email, createdAt: serverTimestamp()
-  });
-  inp.value = '';
-};
-
+    window.showPage = (id) => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    };
 </script>
+
 </body>
 </html>
