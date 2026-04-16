@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light only">
     <title>ProposalIQ — منصة العروض الذكية</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -11,198 +10,174 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+        /* ستايل التصميم الأصلي الخاص بك (الفخم) */
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
-            --bg-color: #f3f4f6;
-            --modal-bg: rgba(0, 0, 0, 0.6);
-            --muted: #6b7280;
+            --bg-color: #f8fafc;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
-            margin: 0;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .app-container {
+            width: 100%; max-width: 500px;
+            background: white; min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
             padding: 20px;
         }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-        h1 { color: var(--primary); margin-bottom: 10px; }
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: all 0.3s;
-            margin-bottom: 15px;
-            width: 100%;
-            display: block;
-        }
-        .btn-primary { background-color: var(--primary); color: white; }
-        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
-        .btn-wa { background-color: #25D366; color: white; text-decoration: none; }
+        .header { text-align: center; padding: 20px 0; }
+        .header h1 { color: var(--primary); font-size: 24px; margin: 0; }
         
-        /* تنسيق النوافذ المنبثقة */
+        .card {
+            background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 12px; padding: 15px; margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .btn {
+            width: 100%; padding: 12px; border: none;
+            border-radius: 10px; cursor: pointer;
+            font-weight: 600; margin-top: 10px;
+            transition: 0.3s; font-size: 15px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        /* ستايل النوافذ المنبثقة */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--modal-bg);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(4px);
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center; z-index: 9999;
+            backdrop-filter: blur(5px);
         }
-        .modal-overlay.open { display: flex; }
-        .modal {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 450px;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        .modal-close {
-            position: absolute;
-            top: 15px; right: 15px;
-            background: none; border: none;
-            font-size: 1.5rem; cursor: pointer; color: #999;
-        }
-        .modal-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: #333; }
-        input[type="text"], textarea {
-            width: 100%; padding: 12px;
-            margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px;
-            box-sizing: border-box; font-family: inherit;
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white; padding: 25px; border-radius: 20px;
+            width: 85%; max-width: 400px; text-align: center;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        .loader-icon { font-size: 3rem; color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loader { font-size: 40px; color: var(--primary); animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+<div class="app-container">
+    <div class="header">
         <h1>ProposalIQ 🚀</h1>
-        <p style="color: var(--muted); margin-bottom: 30px;">نظام إدارة العروض الذكي والمتكامل</p>
-        
-        <button class="btn btn-primary" onclick="openModal('activationModal')">✨ تفعيل الحساب برمز خاص</button>
-        <button class="btn btn-primary" onclick="startAiGeneration()">⚡ توليد عرض ذكي جديد</button>
-        <button class="btn btn-primary" onclick="openModal('retentionModal')">🤖 تحليل أسباب الرفض (ضمان القبول)</button>
+        <p>مرحباً بك في مستقبل العروض</p>
     </div>
 
-    <div class="modal-overlay" id="activationModal">
-        <div class="modal">
-            <button class="modal-close" onclick="closeModal('activationModal')">✕</button>
-            <div class="modal-title">تفعيل الاشتراك</div>
-            <input type="text" id="activationCode" placeholder="أدخل رمز التفعيل المكون من حروف وأرقام">
-            <button class="btn btn-primary" onclick="doActivate()">تفعيل الآن</button>
-            <a href="https://wa.me/966565833185" target="_blank" class="btn btn-wa">📱 طلب رمز تفعيل عبر واتساب</a>
-        </div>
+    <div class="card">
+        <h3>توليد عرض جديد</h3>
+        <p style="font-size: 13px; color: #64748b;">استخدم الذكاء الاصطناعي لإنشاء عرض سعر احترافي في ثوانٍ.</p>
+        <button class="btn btn-primary" onclick="startAiGeneration()">توليد الآن ⚡</button>
     </div>
 
-    <div class="modal-overlay" id="aiGeneratingModal">
-        <div class="modal" style="text-align:center;">
-            <div class="loader-icon">⚡</div>
-            <div style="font-weight:bold; font-size:1.1rem; margin-bottom:10px;">الذكاء الاصطناعي يعمل الآن...</div>
-            <div id="aiLoadingStep" style="color: var(--muted);">جارٍ تحليل المدخلات...</div>
-        </div>
+    <div class="card">
+        <h3>تفعيل الاشتراك</h3>
+        <button class="btn btn-primary" onclick="openModal('activationModal')">إدخال رمز التفعيل</button>
     </div>
 
-    <div class="modal-overlay" id="retentionModal">
-        <div class="modal">
-            <button class="modal-close" onclick="closeModal('retentionModal')">✕</button>
-            <div class="modal-title">🤖 ميزة ضمان القبول</div>
-            <p style="font-size:0.9rem; color: #555; margin-bottom:15px;">إذا تم رفض عرضك، أخبرنا بالسبب وسيقوم النظام بتعديله فوراً لزيادة فرص القبول.</p>
-            <textarea id="rejectionReason" rows="4" placeholder="مثال: العميل يرى أن السعر مرتفع، أو يرغب في سرعة تنفيذ أكبر..."></textarea>
-            <button class="btn btn-primary" onclick="analyzeRejection()">تحليل الرفض وإعادة التوليد</button>
-        </div>
+    <div class="card">
+        <h3>🤖 ضمان القبول</h3>
+        <button class="btn btn-primary" onclick="openModal('retentionModal')">تحليل الرفض والتعديل</button>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+<div class="modal-overlay" id="activationModal">
+    <div class="modal-content">
+        <h3>تفعيل الحساب</h3>
+        <input type="text" id="activationCode" placeholder="أدخل الرمز هنا..." style="width:100%; padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:8px;">
+        <button class="btn btn-primary" onclick="doActivate()">تفعيل</button>
+        <button class="btn" onclick="closeModal('activationModal')">إلغاء</button>
+    </div>
+</div>
 
-        // إعدادات Firebase الخاصة بك
-        const firebaseConfig = {
-            apiKey: "AIzaSyChxttvld06MmlSTD4JB11mYZNA06AP4T8",
-            authDomain: "proposaliq-97d80.firebaseapp.com",
-            projectId: "proposaliq-97d80",
-            storageBucket: "proposaliq-97d80.firebasestorage.app",
-            messagingSenderId: "183384951638",
-            appId: "1:183384951638:web:8c0d6ce87c0c22f14064f7",
-            measurementId: "G-HTD6YLRY8X"
-        };
+<div class="modal-overlay" id="aiGeneratingModal">
+    <div class="modal-content">
+        <div class="loader">⚡</div>
+        <h4 id="aiLoadingStep">جارٍ معالجة البيانات...</h4>
+    </div>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+<div class="modal-overlay" id="retentionModal">
+    <div class="modal-content">
+        <h3>لماذا تم رفض العرض؟</h3>
+        <textarea id="rejectionReason" placeholder="اكتب ملاحظات العميل هنا..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #ddd;"></textarea>
+        <button class="btn btn-primary" onclick="analyzeRejection()">إعادة التوليد بتعديلات ذكية</button>
+        <button class="btn" onclick="closeModal('retentionModal')">إغلاق</button>
+    </div>
+</div>
 
-        // وظائف الواجهة
-        window.openModal = (id) => document.getElementById(id).classList.add('open');
-        window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-        // وظيفة التفعيل
-        window.doActivate = async () => {
-            const code = document.getElementById('activationCode').value.trim().toUpperCase();
-            if (!code) return Swal.fire('تنبيه', 'يرجى إدخال الرمز أولاً', 'info');
+    // إعدادات Firebase الخاصة بك (التي أرسلتها أنت)
+    const firebaseConfig = {
+        apiKey: "AIzaSyChxttvld06MmlSTD4JB11mYZNA06AP4T8",
+        authDomain: "proposaliq-97d80.firebaseapp.com",
+        projectId: "proposaliq-97d80",
+        storageBucket: "proposaliq-97d80.firebasestorage.app",
+        messagingSenderId: "183384951638",
+        appId: "1:183384951638:web:8c0d6ce87c0c22f14064f7",
+        measurementId: "G-HTD6YLRY8X"
+    };
 
-            try {
-                // البحث عن الرمز في قاعدة البيانات (مجموعة tokens)
-                const q = query(collection(db, 'tokens'), where('code', '==', code));
-                const snap = await getDocs(q);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-                if (snap.empty) return Swal.fire('خطأ', 'الرمز غير صحيح، تأكد من كتابته بشكل سليم', 'error');
+    // وظائف التحكم
+    window.openModal = (id) => document.getElementById(id).classList.add('active');
+    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
 
-                const tokenDoc = snap.docs[0];
-                if (tokenDoc.data().used) return Swal.fire('تنبيه', 'هذا الرمز تم استخدامه مسبقاً', 'warning');
+    window.doActivate = async () => {
+        const code = document.getElementById('activationCode').value.trim();
+        if(!code) return Swal.fire('تنبيه', 'أدخل الرمز', 'info');
 
-                // تحديث حالة الرمز
-                await updateDoc(doc(db, 'tokens', tokenDoc.id), {
-                    used: true,
-                    usedAt: serverTimestamp()
-                });
+        try {
+            const q = query(collection(db, 'tokens'), where('code', '==', code));
+            const snap = await getDocs(q);
+            if (snap.empty) return Swal.fire('خطأ', 'الرمز غير صحيح', 'error');
+            
+            const tokenDoc = snap.docs[0];
+            if (tokenDoc.data().used) return Swal.fire('تنبيه', 'الرمز مستخدم مسبقاً', 'warning');
 
-                Swal.fire('تم التفعيل!', 'حسابك الآن نشط بكامل المميزات 🚀', 'success');
-                closeModal('activationModal');
-            } catch (e) {
-                Swal.fire('خطأ أذونات', 'تأكد من إعداد Rules في Firebase للسماح بالكتابة', 'error');
+            await updateDoc(doc(db, 'tokens', tokenDoc.id), { used: true, usedAt: serverTimestamp() });
+            Swal.fire('نجاح', 'تم التفعيل بنجاح! 🚀', 'success');
+            closeModal('activationModal');
+        } catch (e) {
+            Swal.fire('خطأ', 'مشكلة في الصلاحيات (Firebase Rules)', 'error');
+        }
+    };
+
+    window.startAiGeneration = () => {
+        openModal('aiGeneratingModal');
+        const steps = ["تحليل الطلب...", "كتابة المحتوى...", "تنسيق العرض...", "جاهز!"];
+        let i = 0;
+        const interval = setInterval(() => {
+            document.getElementById('aiLoadingStep').innerText = steps[i];
+            i++;
+            if (i >= steps.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    closeModal('aiGeneratingModal');
+                    Swal.fire('ممتاز', 'تم توليد العرض بنجاح', 'success');
+                }, 800);
             }
-        };
+        }, 1000);
+    };
 
-        // وظيفة توليد العروض (الذكاء الاصطناعي)
-        window.startAiGeneration = () => {
-            openModal('aiGeneratingModal');
-            const steps = ["تحليل بيانات المشروع...", "تنسيق الفقرات...", "إضافة اللمسات التسويقية...", "إنشاء ملف العرض النهائي..."];
-            let i = 0;
-            const interval = setInterval(() => {
-                document.getElementById('aiLoadingStep').innerText = steps[i];
-                i++;
-                if (i >= steps.length) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        closeModal('aiGeneratingModal');
-                        Swal.fire('تم بنجاح', 'تم إنشاء عرض السعر الذكي الخاص بك!', 'success');
-                    }, 800);
-                }
-            }, 1200);
-        };
+    window.analyzeRejection = () => {
+        if(!document.getElementById('rejectionReason').value) return Swal.fire('تنبيه', 'اكتب السبب', 'info');
+        closeModal('retentionModal');
+        startAiGeneration();
+    };
+</script>
 
-        // وظيفة تحليل الرفض
-        window.analyzeRejection = () => {
-            if (!document.getElementById('rejectionReason').value.trim()) return Swal.fire('تنبيه', 'أدخل سبب الرفض للتحليل', 'info');
-            closeModal('retentionModal');
-            startAiGeneration();
-        };
-
-    </script>
 </body>
 </html>
