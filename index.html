@@ -1,1257 +1,268 @@
-<!DOCTYPE html>
+from weasyprint import HTML
 
+# Content for the Pitch Deck
+html_content = """
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta name="color-scheme" content="light only">
-                <title>ProposalIQ — منصة العروض الذكية</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<!-- Firebase Compat SDK — Safari/iOS compatible (no ES modules required) -->
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<script>
-/* ── Compat wrappers: mirror the modular API used throughout the app ── */
-function initializeApp(cfg){ return firebase.initializeApp(cfg); }
-function getAuth(){ return firebase.auth(); }
-function getFirestore(){ return firebase.firestore(); }
-function doc(db,...args){
-  if(args.length===1)return db.doc(args[0]);
-  if(args.length===2)return db.collection(args[0]).doc(args[1]);
-  let ref=db; for(let i=0;i<args.length;i++) ref=(i%2===0)?ref.collection(args[i]):ref.doc(args[i]); return ref;
-}
-function collection(db,path){return db.collection(path);}
-function query(ref,...constraints){let q=ref;for(const c of constraints)q=c(q);return q;}
-function where(field,op,val){return q=>q.where(field,op,val);}
-async function getDoc(ref){return await ref.get();}
-async function setDoc(ref,data){return await ref.set(data);}
-async function updateDoc(ref,data){return await ref.update(data);}
-async function addDoc(colRef,data){return await colRef.add(data);}
-async function getDocs(q){return await q.get();}
-function onSnapshot(q,cb){return q.onSnapshot(cb);}
-function serverTimestamp(){return firebase.firestore.FieldValue.serverTimestamp();}
-function increment(n){return firebase.firestore.FieldValue.increment(n);}
-function onAuthStateChanged(auth,cb){return auth.onAuthStateChanged(cb);}
-async function createUserWithEmailAndPassword(auth,email,pass){return await auth.createUserWithEmailAndPassword(email,pass);}
-async function signInWithEmailAndPassword(auth,email,pass){return await auth.signInWithEmailAndPassword(email,pass);}
-async function signOut(auth){return await auth.signOut();}
-async function sendPasswordResetEmail(auth,email){return await auth.sendPasswordResetEmail(email);}
-/* ── Safe clipboard copy with execCommand fallback for Safari ── */
-function _safeCopy(text){
-  if(navigator.clipboard&&navigator.clipboard.writeText)
-    return navigator.clipboard.writeText(text).catch(()=>_execCopy(text));
-  return _execCopy(text);
-}
-function _execCopy(text){
-  const ta=document.createElement('textarea');
-  ta.value=text;ta.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0;';
-  document.body.appendChild(ta);ta.focus();ta.select();
-  try{document.execCommand('copy');}catch(e){}
-  document.body.removeChild(ta);return Promise.resolve();
-}
-
-
-                const firebaseConfig = {
-                                apiKey: "AIzaSyChxttvld06MmlSTD4JB11mYZNA06AP4T8",
-                                authDomain: "proposaliq-97d80.firebaseapp.com",
-                                projectId: "proposaliq-97d80",
-                                storageBucket: "proposaliq-97d80.firebasestorage.app",
-                                messagingSenderId: "183384951638",
-                                appId: "1:183384951638:web:8c0d6ce87c0c22f14064f7",
-                                measurementId: "G-HTD6YLRY8X"
-                };
-
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                const db = getFirestore(app);
-
-                const PLAN_CONFIG = {
-                                free: {name:'مجاني', quota:3, months:0},
-                                basic_monthly: {name:'شهري أساسي', quota:30, months:1},
-                                basic_quarterly: {name:'ربعي أساسي', quota:90, months:3},
-                                basic_yearly: {name:'سنوي أساسي', quota:360, months:12},
-                                advanced_monthly: {name:'شهري متقدم', quota:150, months:1},
-                                advanced_quarterly:{name:'ربعي متقدم', quota:450, months:3},
-                                advanced_yearly: {name:'سنوي متقدم', quota:1800, months:12},
-                                enterprise_yearly:{name:'سنوي مؤسسي', quota:99999, months:12}
-                };
-
-                const WA_NUMBER = '966565833185';
-                const ADMIN_PASS = 'ARKANE2026';
-
-                let currentUser = null;
-                let currentUserDoc = null;
-                let currentProposalId = null;
-                let logoDataURL = null;
-                let stampDataURL = null;
-                let prevPage = 'pageHome';
-                let unsubProposals = null;
-                let liveUnsubscribe = null;
-                let fomoInterval = null;
-
-                function escapeHtml(str) {
-                                if (!str) return '';
-                                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-                }
-                function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-                function formatAmount(n) { return Math.round(n||0).toLocaleString('ar-SA'); }
-                function formatExpiry(iso) { const d=new Date(iso); return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
-                function showError(id,msg) {
-                                const el=document.getElementById(id); if(!el)return;
-                                el.textContent=msg; el.style.display='block';
-                                setTimeout(()=>el.style.display='none',4000);
-                }
-                function generateCompanyCode() {
-                                const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                                return 'CO-'+Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
-                }
-                function generateRef(count) {
-                                return 'PQ-'+new Date().getFullYear()+'-'+String((count||0)+1).padStart(3,'0');
-                }
-
-                function showPage(id) {
-                                const el = document.getElementById(id); if (!el) return;
-                                prevPage = document.querySelector('.page.active')?.id || 'pageHome';
-                                document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-                                el.classList.add('active');
-                                window.scrollTo(0,0);
-                                if (id==='pageManagerDash') refreshManagerDash();
-                                if (id==='pageAgentDash') refreshAgentDash();
-                                if (id==='pageAdmin') renderTokensList();
-                                if (id==='pageNewProposal') {
-                                                const tb=document.getElementById('itemsBody');
-                                                if(tb&&tb.children.length===0){addItem();addItem();addItem();}
-                                }
-                }
-                window.showPage = showPage;
-                window.goBack = ()=>showPage(prevPage);
-                window.goToDashboard = ()=>{
-                                if(!currentUser) return showPage('pageHome');
-                                showPage(currentUserDoc?.role==='manager'?'pageManagerDash':'pageAgentDash');
-                };
-
-                window.showModal = id=>document.getElementById(id)?.classList.add('open');
-                window.closeModal = id=>document.getElementById(id)?.classList.remove('open');
-
-                window.selectRole = role => {
-                                document.getElementById('selectedRole').value = role;
-                                document.getElementById('roleBtnManager').className = role==='manager'?'role-btn active-manager':'role-btn';
-                                document.getElementById('roleBtnAgent').className = role==='agent'?'role-btn active-agent':'role-btn';
-                                document.getElementById('companyCodeField').style.display = role==='agent'?'block':'none';
-                };
-
-                window.checkPasswordStrength = pw => {
-                                const bar=document.getElementById('pwStrengthBar');
-                                const label=document.getElementById('pwStrengthLabel');
-                                if(!bar||!label)return;
-                                if(!pw){bar.className='pw-strength';label.textContent='';return;}
-                                let score=0;
-                                if(pw.length>=8)score++; if(pw.length>=12)score++;
-                                if(/[A-Z]/.test(pw))score++; if(/[0-9]/.test(pw))score++;
-                                if(/[^A-Za-z0-9]/.test(pw))score++;
-                                if(score<=2){bar.className='pw-strength weak';label.textContent='⚠️ ضعيفة';label.style.color='var(--danger)';}
-                                else if(score<=3){bar.className='pw-strength medium';label.textContent='⚡ متوسطة';label.style.color='var(--warning)';}
-                                else{bar.className='pw-strength strong';label.textContent='✅ قوية';label.style.color='var(--success)';}
-                };
-
-                window.doRegister = async () => {
-                                const role = document.getElementById('selectedRole').value;
-                                const company = document.getElementById('regCompany').value.trim();
-                                const email = document.getElementById('regEmail').value.trim().toLowerCase();
-                                const pass = document.getElementById('regPassword').value;
-                                const pass2 = document.getElementById('regPassword2').value;
-                                const code = document.getElementById('regCompanyCode').value.trim().toUpperCase();
-
-                                if (!company||!email||!pass) { showError('regError','يرجى ملء جميع الحقول'); return; }
-                                if (!isValidEmail(email)) { showError('regError','صيغة البريد غير صحيحة'); return; }
-                                if (pass.length < 8) { showError('regError','كلمة المرور 8 أحرف على الأقل'); return; }
-                                if (pass !== pass2) { showError('regError','كلمتا المرور غير متطابقتين'); return; }
-
-                                try {
-                                                const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                                                const uid = cred.user.uid;
-
-                                                if (role === 'manager') {
-                                                                const companyCode = generateCompanyCode();
-                                                                const companyRef = await addDoc(collection(db,'companies'), {
-                                                                                name: company, code: companyCode, managerId: uid,
-                                                                                plan:'free', quota:3, quotaUsed:0, expiry:null,
-                                                                                createdAt: serverTimestamp()
-                                                                });
-                                                                await setDoc(doc(db,'users',uid), {
-                                                                                email, company, role:'manager', companyId: companyRef.id,
-                                                                                plan:'free', quota:3, quotaUsed:0, expiry:null,
-                                                                                createdAt: serverTimestamp()
-                                                                });
-                                                } else {
-                                                                if (!code) { showError('regError','أدخل كود الشركة من مديرك'); return; }
-                                                                const q = query(collection(db,'companies'), where('code','==',code));
-                                                                const snap = await getDocs(q);
-                                                                if (snap.empty) { showError('regError','كود الشركة غير صحيح'); return; }
-                                                                const companyDoc = snap.docs[0];
-                                                                const companyData = companyDoc.data();
-                                                                await setDoc(doc(db,'users',uid), {
-                                                                                email, company: companyData.name, role:'agent',
-                                                                                companyId: companyDoc.id,
-                                                                                plan: companyData.plan||'free',
-                                                                                quota: companyData.quota||3,
-                                                                                quotaUsed: 0, expiry: companyData.expiry||null,
-                                                                                createdAt: serverTimestamp()
-                                                                });
-                                                }
-                                                closeModal('registerModal');
-                                } catch(e) {
-                                                const msgs = { 'auth/email-already-in-use':'هذا البريد مسجّل مسبقاً', 'auth/weak-password':'كلمة المرور ضعيفة جداً' };
-                                                showError('regError', msgs[e.code] || 'حدث خطأ: '+e.message);
-                                }
-                };
-
-                window.doLogin = async () => {
-                                const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-                                const pass = document.getElementById('loginPassword').value;
-                                if (!email||!pass) { showError('loginError','أدخل البريد وكلمة المرور'); return; }
-                                try {
-                                                await signInWithEmailAndPassword(auth, email, pass);
-                                                closeModal('loginModal');
-                                } catch(e) {
-                                                showError('loginError','البريد أو كلمة المرور غير صحيحة');
-                                }
-                };
-
-                window.showForgotPassword = () => {
-                                closeModal('loginModal');
-                                document.getElementById('forgotEmail').value=document.getElementById('loginEmail').value;
-                                showModal('forgotModal');
-                };
-                window.doForgotPassword = async () => {
-                                const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
-                                if (!email) { showError('forgotError','أدخل بريدك الإلكتروني'); return; }
-                                try {
-                                                await sendPasswordResetEmail(auth, email);
-                                                const el = document.getElementById('forgotResult');
-                                                el.style.display='block';
-                                                el.innerHTML = '✅ تم إرسال رابط إعادة التعيين لبريدك الإلكتروني.';
-                                } catch(e) {
-                                                const el = document.getElementById('forgotResult');
-                                                el.style.display='block';
-                                                el.innerHTML = '✅ إذا كان البريد مسجّلاً، ستصلك رسالة استرداد.';
-                                }
-                };
-
-                window.logout = async () => {
-                                if(unsubProposals){ unsubProposals(); unsubProposals=null; }
-                                if(liveUnsubscribe){ liveUnsubscribe(); liveUnsubscribe=null; }
-                                await signOut(auth);
-                                currentUser=null; currentUserDoc=null;
-                                updateNavBar(null);
-                                showPage('pageHome');
-                };
-
-                onAuthStateChanged(auth, async user => {
-                                if (user) {
-                                                currentUser = user;
-                                                const snap = await getDoc(doc(db,'users',user.uid));
-                                                if (snap.exists()) {
-                                                                currentUserDoc = {id:user.uid, ...snap.data()};
-                                                                updateNavBar(currentUserDoc);
-                                                                if (!checkClientViewParam()) goToDashboard();
-                                                } else {
-                                                                let retrySnap = null;
-                                                                for (let i = 0; i < 3; i++) {
-                                                                                await new Promise(r => setTimeout(r, 800));
-                                                                                retrySnap = await getDoc(doc(db,'users',user.uid));
-                                                                                if (retrySnap.exists()) break;
-                                                                }
-                                                                if (retrySnap && retrySnap.exists()) {
-                                                                                currentUserDoc = {id:user.uid, ...retrySnap.data()};
-                                                                                updateNavBar(currentUserDoc);
-                                                                                if (!checkClientViewParam()) goToDashboard();
-                                                                } else {
-                                                                                updateNavBar(null);
-                                                                                if (!checkClientViewParam()) showPage('pageHome');
-                                                                }
-                                                }
-                                } else {
-                                                currentUser=null; currentUserDoc=null;
-                                                updateNavBar(null);
-                                                if (!checkClientViewParam()) showPage('pageHome');
-                                }
-                });
-
-                function updateNavBar(u) {
-                                const nav = document.getElementById('navActions');
-                                if (!nav) return;
-                                if (!u) {
-                                                nav.innerHTML=`<button class="btn btn-outline btn-sm" onclick="showModal('loginModal')">دخول</button><button class="btn btn-primary btn-sm" onclick="showModal('registerModal')">ابدأ مجاناً</button>`;
-                                                return;
-                                }
-                                const badge = u.role==='manager'
-                                                ? '<span class="badge badge-manager" style="font-size:.75rem;padding:3px 8px">🏢 مدير</span>'
-                                                : '<span class="badge badge-agent" style="font-size:.75rem;padding:3px 8px">📱 مندوب</span>';
-                                nav.innerHTML=`${badge}<span style="color:rgba(255,255,255,.7);font-size:.8rem;">${escapeHtml(u.company||u.email)}</span>${u.role==='agent'?'<button class="btn btn-primary btn-sm" onclick="showPage(\'pageNewProposal\')">+ عرض جديد</button>':''}<button class="btn btn-outline btn-sm" onclick="logout()">خروج</button>`;
-                }
-
-                window.doAdminLogin = () => {
-                                const p = document.getElementById('adminPassword').value;
-                                if (p===ADMIN_PASS) { closeModal('adminModal'); showPage('pageAdmin'); document.getElementById('adminPassword').value=''; }
-                                else showError('adminError','كلمة المرور غير صحيحة');
-                };
-
-                window.copyCompanyCode = async () => {
-                                if (!currentUserDoc?.companyId) return;
-                                const snap = await getDoc(doc(db,'companies',currentUserDoc.companyId));
-                                if (!snap.exists()) return;
-                                const code = snap.data().code;
-                                _safeCopy(code).then(()=>alert('✅ تم نسخ كود الشركة: '+code)).catch(()=>prompt('الكود:',code));
-                };
-
-                async function refreshManagerDash() {
-                                if (!currentUserDoc || currentUserDoc.role!=='manager') return;
-                                const snap = await getDoc(doc(db,'users',currentUser.uid));
-                                if (snap.exists()) currentUserDoc = {id:currentUser.uid,...snap.data()};
-
-                                document.getElementById('mgrName').textContent = escapeHtml(currentUserDoc.company||currentUserDoc.email);
-
-                                // company code
-                                if (currentUserDoc.companyId) {
-                                                const coSnap = await getDoc(doc(db,'companies',currentUserDoc.companyId));
-                                                if (coSnap.exists()) document.getElementById('mgrCompanyCode').textContent = coSnap.data().code;
-                                }
-
-                                // plan info
-                                const isActive = currentUserDoc.plan && currentUserDoc.plan!=='free';
-                                const cfg = PLAN_CONFIG[currentUserDoc.plan]||PLAN_CONFIG.free;
-                                document.getElementById('mgrPlanBadge').innerHTML = isActive
-                                                ? `<div class="alert alert-success" style="margin:0;font-size:.82rem;">✅ ${escapeHtml(cfg.name)}</div>`
-                                                : `<div class="alert alert-info" style="margin:0;font-size:.82rem;">⭐ الباقة المجانية</div>`;
-
-                                const subInfo = document.getElementById('mgrSubInfo');
-                                if (isActive && currentUserDoc.expiry) {
-                                                subInfo.style.display='flex';
-                                                document.getElementById('mgrSubPlan').textContent = cfg.name;
-                                                document.getElementById('mgrSubExpiry').textContent = formatExpiry(currentUserDoc.expiry);
-                                                document.getElementById('mgrSubQuota').textContent = Math.max(0,(currentUserDoc.quota||0)-(currentUserDoc.quotaUsed||0))+' عرض';
-                                } else subInfo.style.display='none';
-
-                                renderActivateSection('mgrActivateSection','mgrActivateErr',isActive);
-
-                                // agents
-                                const agentsQ = query(collection(db,'users'), where('companyId','==',currentUserDoc.companyId), where('role','==','agent'));
-                                const agentsSnap = await getDocs(agentsQ);
-                                document.getElementById('mgrTotalAgents').textContent = agentsSnap.size;
-
-                                const agentsList = document.getElementById('mgrAgentsList');
-                                agentsList.innerHTML='';
-                                if (agentsSnap.empty) {
-                                                agentsList.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:.86rem">لا يوجد مندوبون — شاركهم كود الشركة أعلاه</div>';
-                                } else {
-                                                agentsSnap.forEach(ag => {
-                                                                const d = ag.data();
-                                                                const item = document.createElement('div');
-                                                                item.className='agent-card';
-                                                                item.innerHTML=`<div><div class="agent-name">📱 ${escapeHtml(d.email)}</div></div>`;
-                                                                agentsList.appendChild(item);
-                                                });
-                                }
-
-                                // proposals - company level
-                                const propsQ = query(collection(db,'proposals'), where('companyId','==',currentUserDoc.companyId));
-                                const propsSnap = await getDocs(propsQ);
-                                const allProps = propsSnap.docs.map(d=>({id:d.id,...d.data()}));
-
-                                document.getElementById('mgrTotalProps').textContent = allProps.length;
-                                document.getElementById('mgrSentProps').textContent = allProps.filter(p=>p.status==='sent'||p.status==='approved').length;
-                                document.getElementById('mgrAcceptedProps').textContent = allProps.filter(p=>p.status==='accepted').length;
-
-                                // pending approvals
-                                const pending = allProps.filter(p=>p.status==='pending');
-                                document.getElementById('mgrPendingCount').textContent = pending.length>0?pending.length:'';
-
-                                const approvalsList = document.getElementById('mgrApprovalsList');
-                                approvalsList.innerHTML='';
-                                if (pending.length===0) {
-                                                approvalsList.innerHTML='<div style="text-align:center;padding:18px;color:var(--muted);font-size:.86rem">لا توجد عروض تنتظر الاعتماد ✅</div>';
-                                } else {
-                                                pending.forEach(p => {
-                                                                const item = document.createElement('div');
-                                                                item.className='approval-item';
-                                                                item.innerHTML=`
-                                                                <div class="approval-header">
-                                                                                <div>
-                                                                                                <div style="font-weight:700;font-size:.92rem;">${escapeHtml(p.subject)}</div>
-                                                                                                <div style="font-size:.8rem;color:var(--muted);">${escapeHtml(p.clientCompany)} · ${escapeHtml(p.ref)}</div>
-                                                                                </div>
-                                                                                <div class="approval-actions">
-                                                                                                <button class="btn btn-ghost btn-sm" onclick="openProposal('${p.id}')">👁 عرض</button>
-                                                                                                <button class="btn btn-success btn-sm" onclick="approveProposal('${p.id}')">✅ اعتماد</button>
-                                                                                                <button class="btn btn-danger btn-sm" onclick="rejectProposal('${p.id}')">❌ رفض</button>
-                                                                                </div>
-                                                                </div>
-                                                                <div style="font-size:.82rem;color:var(--muted)">الإجمالي: ${formatAmount(p.total)} ريال</div>`;
-                                                                approvalsList.appendChild(item);
-                                                });
-                                }
-
-                                // all proposals list
-                                const allPropsDiv = document.getElementById('mgrAllProposals');
-                                allPropsDiv.innerHTML='';
-                                if (allProps.length===0) {
-                                                allPropsDiv.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:.86rem">لا توجد عروض بعد</div>';
-                                } else {
-                                                const list = document.createElement('div'); list.className='proposal-list';
-                                                allProps.slice().sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(p => {
-                                                                const status = statusMap()[p.status]||statusMap().draft;
-                                                                const liveBadge = p.isClientLive ? ' <span class="live-badge">🔴 يقرأ الآن</span>' : '';
-                                                                const item = document.createElement('div');
-                                                                item.className='proposal-item';
-                                                                item.innerHTML=`
-                                                                <div>
-                                                                                <div class="prop-title">${escapeHtml(p.subject)}${liveBadge}</div>
-                                                                                <div class="prop-client">${escapeHtml(p.clientCompany)} · ${escapeHtml(p.ref)}</div>
-                                                                </div>
-                                                                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                                                                <span class="prop-amount">${formatAmount(p.total)} ريال</span>
-                                                                                <span class="status-badge ${status[1]}">${status[0]}</span>
-                                                                                <button class="btn btn-ghost btn-sm" onclick="openProposal('${p.id}')">عرض</button>
-                                                                </div>`;
-                                                                list.appendChild(item);
-                                                });
-                                                allPropsDiv.appendChild(list);
-                                }
-                                startLiveTracking();
-                }
-
-                function startLiveTracking() {
-                                if (liveUnsubscribe) liveUnsubscribe();
-                                if (!currentUserDoc?.companyId) return;
-                                const liveQ = query(collection(db,'proposals'), where('companyId','==',currentUserDoc.companyId), where('isClientLive','==',true));
-                                liveUnsubscribe = onSnapshot(liveQ, (snapshot) => {
-                                                snapshot.docChanges().forEach(change => {
-                                                                if (change.type === 'added' || change.type === 'modified') {
-                                                                                const d = change.doc.data();
-                                                                                if (d.isClientLive) {
-                                                                                                Swal.fire({toast:true,position:'top-end',icon:'info',title:'🔴 العميل يقرأ عرض "'+escapeHtml(d.subject)+'" الآن!',showConfirmButton:false,timer:5000,timerProgressBar:true});
-                                                                                }
-                                                                }
-                                                });
-                                });
-                }
-
-                window.approveProposal = async id => {
-                                await updateDoc(doc(db,'proposals',id), { status:'approved', approvedBy: currentUser.uid, approvedAt: serverTimestamp() });
-                                alert('✅ تم اعتماد العرض');
-                                refreshManagerDash();
-                };
-
-                window.rejectProposal = async id => {
-                                const reason = prompt('سبب الرفض (اختياري):') || '';
-                                await updateDoc(doc(db,'proposals',id), { status:'rejected', rejectedBy: currentUser.uid, rejectedAt: serverTimestamp(), rejectReason: reason });
-                                alert('❌ تم رفض العرض');
-                                refreshManagerDash();
-                };
-
-                async function refreshAgentDash() {
-                                if (!currentUserDoc) return;
-                                const snap = await getDoc(doc(db,'users',currentUser.uid));
-                                if (snap.exists()) currentUserDoc = {id:currentUser.uid,...snap.data()};
-
-                                document.getElementById('agentName').textContent = escapeHtml(currentUserDoc.company||currentUserDoc.email);
-                                document.getElementById('agentCompanyLabel').textContent = 'شركة: '+escapeHtml(currentUserDoc.company||'—');
-
-                                const isActive = currentUserDoc.plan && currentUserDoc.plan!=='free';
-                                const cfg = PLAN_CONFIG[currentUserDoc.plan]||PLAN_CONFIG.free;
-                                document.getElementById('agentPlanBadge').innerHTML = isActive
-                                                ? `<div class="alert alert-success" style="margin:0;font-size:.82rem;">✅ ${escapeHtml(cfg.name)}</div>`
-                                                : `<div class="alert alert-info" style="margin:0;font-size:.82rem;">⭐ الباقة المجانية</div>`;
-
-                                const subInfo = document.getElementById('agentSubInfo');
-                                if (isActive && currentUserDoc.expiry) {
-                                                subInfo.style.display='flex';
-                                                document.getElementById('agentSubPlan').textContent = cfg.name;
-                                                document.getElementById('agentSubExpiry').textContent = formatExpiry(currentUserDoc.expiry);
-                                                document.getElementById('agentSubQuota').textContent = Math.max(0,(currentUserDoc.quota||0)-(currentUserDoc.quotaUsed||0))+' عرض';
-                                } else subInfo.style.display='none';
-
-                                renderActivateSection('agentActivateSection','agentActivateErr',isActive);
-
-                                // my proposals
-                                const propsQ = query(collection(db,'proposals'), where('userId','==',currentUser.uid));
-                                const propsSnap = await getDocs(propsQ);
-                                const myProps = propsSnap.docs.map(d=>({id:d.id,...d.data()}));
-
-                                document.getElementById('agTotalProps').textContent = myProps.length;
-                                document.getElementById('agPending').textContent = myProps.filter(p=>p.status==='pending').length;
-                                document.getElementById('agSent').textContent = myProps.filter(p=>p.status==='sent').length;
-                                document.getElementById('agAccepted').textContent = myProps.filter(p=>p.status==='accepted').length;
-
-                                // approved alert
-                                const approved = myProps.filter(p=>p.status==='approved');
-                                const approvedAlert = document.getElementById('agentApprovedAlert');
-                                if (approvedAlert) {
-                                                if (approved.length>0) {
-                                                                approvedAlert.style.display='block';
-                                                                approvedAlert.innerHTML=`✅ لديك <strong>${approved.length}</strong> عرض معتمد جاهز للإرسال للعميل!`;
-                                                } else approvedAlert.style.display='none';
-                                }
-
-                                // rejections
-                                const rejDiv = document.getElementById('agentRejections');
-                                rejDiv.innerHTML='';
-                                myProps.filter(p=>p.status==='rejected').forEach(p => {
-                                                const div=document.createElement('div'); div.className='alert alert-danger';
-                                                div.textContent=`❌ تم رفض عرضك "${p.subject}"${p.rejectReason?' السبب: '+p.rejectReason:''}`;
-                                                rejDiv.appendChild(div);
-                                });
-
-                                const container = document.getElementById('agentProposalList');
-                                container.innerHTML='';
-                                if (myProps.length===0) {
-                                                container.innerHTML='<div class="empty-state"><div class="empty-icon">📄</div><div>لا يوجد عروض بعد</div></div>';
-                                                return;
-                                }
-                                const list=document.createElement('div'); list.className='proposal-list';
-                                myProps.slice().sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).forEach(p => {
-                                                const status=statusMap()[p.status]||statusMap().draft;
-                                                const liveBadge = p.isClientLive ? ' <span class="live-badge">🔴 يقرأ الآن</span>' : '';
-                                                const item=document.createElement('div'); item.className='proposal-item';
-                                                item.innerHTML=`
-                                                <div>
-                                                                <div class="prop-title">${escapeHtml(p.subject)}${liveBadge}</div>
-                                                                <div class="prop-client">${escapeHtml(p.clientCompany)} · ${escapeHtml(p.ref)} · 👁 ${p.viewCount||0} مشاهدة</div>
-                                                </div>
-                                                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                                                <span class="prop-amount">${formatAmount(p.total)} ريال</span>
-                                                                <span class="status-badge ${status[1]}">${status[0]}</span>
-                                                                <button class="btn btn-ghost btn-sm" onclick="openProposal('${p.id}')">عرض</button>
-                                                </div>`;
-                                                list.appendChild(item);
-                                });
-                                container.appendChild(list);
-                }
-
-                function statusMap() {
-                                return {
-                                                draft: ['مسودة', 's-draft'],
-                                                pending: ['بانتظار الاعتماد', 's-pending'],
-                                                approved: ['✅ معتمد - أرسله للعميل', 's-approved'],
-                                                sent: ['مُرسَل', 's-sent'],
-                                                accepted: ['مقبول', 's-accepted'],
-                                                rejected: ['مرفوض', 's-rejected']
-                                };
-                }
-
-                function renderActivateSection(sectionId, errId, isActive) {
-                                const sec = document.getElementById(sectionId); if(!sec)return;
-                                sec.innerHTML='';
-                                if (isActive) {
-                                                sec.innerHTML=`<div style="display:flex;align-items:center;gap:10px;background:#f0f0f0;border-radius:10px;padding:10px 14px;margin-bottom:12px;"><span>🔒</span><span style="font-size:.84rem;color:#666;">الاشتراك فعّال</span></div>`;
-                                } else {
-                                                sec.innerHTML=`
-                                                <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px;">
-                                                                <div style="flex:1;min-width:180px;">
-                                                                                <label style="font-size:.8rem;font-weight:600;display:block;margin-bottom:5px;">🔑 رمز التفعيل (اختياري)</label>
-                                                                                <input id="${sectionId}_code" placeholder="PQ-XXXX-XXXX" style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;letter-spacing:1px;font-family:inherit;"/>
-                                                                </div>
-                                                                <button class="btn btn-primary" onclick="doActivateDash('${sectionId}_code','${errId}')">✓ تفعيل</button>
-                                                </div>
-                                                <div id="${errId}" class="alert alert-warn" style="display:none;"></div>`;
-                                }
-                }
-
-                async function applyToken(code, errId) {
-                                const q = query(collection(db,'tokens'), where('code','==',code), where('used','==',false));
-                                const snap = await getDocs(q);
-                                if (snap.empty) { showError(errId,'الرمز غير صحيح أو مستخَدم مسبقاً'); return false; }
-                                const tokenDoc = snap.docs[0];
-                                const plan = tokenDoc.data().plan;
-                                const cfg = PLAN_CONFIG[plan]||{quota:30,months:1};
-                                const expiry = new Date(); expiry.setMonth(expiry.getMonth()+cfg.months);
-
-                                await updateDoc(doc(db,'tokens',tokenDoc.id),{used:true, usedBy:currentUser.uid, usedAt:serverTimestamp()});
-                                await updateDoc(doc(db,'users',currentUser.uid),{plan, quota:cfg.quota, quotaUsed:0, expiry:expiry.toISOString()});
-
-                                // update company too
-                                if (currentUserDoc?.companyId) {
-                                                await updateDoc(doc(db,'companies',currentUserDoc.companyId),{plan, quota:cfg.quota, expiry:expiry.toISOString()});
-                                                // update all agents in company
-                                                const agentsQ = query(collection(db,'users'), where('companyId','==',currentUserDoc.companyId), where('role','==','agent'));
-                                                const agentsSnap = await getDocs(agentsQ);
-                                                agentsSnap.forEach(async ag => {
-                                                                await updateDoc(doc(db,'users',ag.id),{plan, quota:cfg.quota, expiry:expiry.toISOString()});
-                                                });
-                                }
-
-                                const freshSnap = await getDoc(doc(db,'users',currentUser.uid));
-                                if (freshSnap.exists()) currentUserDoc = {id:currentUser.uid,...freshSnap.data()};
-                                return true;
-                }
-
-                window.doActivateDash = async (inputId, errId) => {
-                                const code = (document.getElementById(inputId)?.value||'').trim().toUpperCase();
-                                if (!code) { showError(errId,'أدخل رمز التفعيل'); return; }
-                                if (await applyToken(code,errId)) {
-                                                if (currentUserDoc?.role==='manager') refreshManagerDash(); else refreshAgentDash();
-                                }
-                };
-
-                window.doActivate = async () => {
-                                const code = document.getElementById('activationCode').value.trim().toUpperCase();
-                                if (await applyToken(code,'activateError')) {
-                                                const cfg = PLAN_CONFIG[currentUserDoc?.plan]||PLAN_CONFIG.free;
-                                                document.getElementById('activateDetails').innerHTML=`<div style="font-size:.85rem;color:var(--muted)">الباقة: <strong>${escapeHtml(cfg.name)}</strong> · رصيد العروض: <strong>${cfg.quota}</strong></div>`;
-                                                document.getElementById('activateSuccess').style.display='block';
-                                                if (currentUserDoc?.role==='manager') refreshManagerDash(); else refreshAgentDash();
-                                }
-                };
-
-                async function checkQuota() {
-                                if (!currentUserDoc) return true;
-                                const snap = await getDoc(doc(db,'users',currentUser.uid));
-                                const u = snap.data();
-                                if (!u) return true;
-                                if (!u.plan || u.plan==='free') {
-                                                const propsQ = query(collection(db,'proposals'), where('userId','==',currentUser.uid));
-                                                const propsSnap = await getDocs(propsQ);
-                                                if (propsSnap.size >= 3) { alert('وصلت للحد الأقصى للباقة المجانية (3 عروض).\nيرجى تفعيل اشتراك للمتابعة.'); return false; }
-                                                return true;
-                                }
-                                if (Math.max(0,(u.quota||0)-(u.quotaUsed||0)) <= 0) { alert('انتهت العروض المتاحة في باقتك.'); return false; }
-                                return true;
-                }
-
-                async function deductQuota() {
-                                if (!currentUserDoc || !currentUserDoc.plan || currentUserDoc.plan==='free') return;
-                                await updateDoc(doc(db,'users',currentUser.uid),{quotaUsed: increment(1)});
-                }
-
-                window.addItem = (name='',qty=1,price=0) => {
-                                const tbody=document.getElementById('itemsBody');
-                                const row=document.createElement('tr');
-                                row.innerHTML=`<td><input placeholder="اسم البند" value="${escapeHtml(name)}" oninput="recalcTotals()"/></td><td><input type="number" min="1" value="${qty}" style="width:55px;" oninput="recalcTotals()"/></td><td><input type="number" min="0" value="${price}" oninput="recalcTotals()"/></td><td><button class="del-row" onclick="this.closest('tr').remove();recalcTotals()">✕</button></td>`;
-                                tbody.appendChild(row);
-                                recalcTotals();
-                };
-
-                window.recalcTotals = () => {
-                                let subtotal=0;
-                                document.querySelectorAll('#itemsBody tr').forEach(row => {
-                                                const inputs=row.querySelectorAll('input');
-                                                subtotal+=(parseFloat(inputs[1]?.value)||0)*(parseFloat(inputs[2]?.value)||0);
-                                });
-                                const discount=parseFloat(document.getElementById('propDiscount').value)||0;
-                                const afterDiscount=Math.max(0,subtotal-discount);
-                                const vat=afterDiscount*0.15;
-                                const total=afterDiscount+vat;
-
-                                document.getElementById('totSubtotal').textContent=formatAmount(subtotal)+' ريال';
-                                document.getElementById('totDiscount').textContent='- '+formatAmount(discount)+' ريال';
-                                document.getElementById('totAfterDiscount').textContent=formatAmount(afterDiscount)+' ريال';
-                                document.getElementById('totVAT').textContent=formatAmount(vat)+' ريال';
-                                document.getElementById('totFinal').textContent=formatAmount(total)+' ريال';
-                                return {subtotal,discount,afterDiscount,vat,total};
-                };
-
-                window.handleLogoUpload = e => {
-                                const file=e.target.files[0]; if(!file)return;
-                                if(!file.type.startsWith('image/')){alert('الرجاء رفع ملف صورة صالح');return;}
-                                const r=new FileReader();
-                                r.onload=ev=>{logoDataURL=ev.target.result;document.getElementById('logoPreview').src=logoDataURL;document.getElementById('logoPreview').style.display='block';document.getElementById('logoPlaceholderText').style.display='none';document.getElementById('removeLogoBtn').style.display='inline-flex';};
-                                r.readAsDataURL(file);
-                };
-                window.removeLogo=()=>{logoDataURL=null;document.getElementById('logoPreview').style.display='none';document.getElementById('logoPlaceholderText').style.display='block';document.getElementById('removeLogoBtn').style.display='none';document.getElementById('logoFileInput').value='';};
-
-                window.handleStampUpload = e => {
-                                const file=e.target.files[0]; if(!file)return;
-                                if(!file.type.startsWith('image/')){alert('الرجاء رفع ملف صورة صالح');return;}
-                                const r=new FileReader();
-                                r.onload=ev=>{stampDataURL=ev.target.result;document.getElementById('stampPreview').src=stampDataURL;document.getElementById('stampPreview').style.display='block';document.getElementById('stampPlaceholderText').style.display='none';document.getElementById('removeStampBtn').style.display='inline-flex';};
-                                r.readAsDataURL(file);
-                };
-                window.removeStamp=()=>{stampDataURL=null;document.getElementById('stampPreview').style.display='none';document.getElementById('stampPlaceholderText').style.display='block';document.getElementById('removeStampBtn').style.display='none';document.getElementById('stampFileInput').value='';};
-
-                function gatherProposalData(aiText='') {
-                                const tots=recalcTotals();
-                                const payTerms=document.getElementById('propPaymentTerms').value==='custom'
-                                                ? document.getElementById('propPaymentTermsCustom').value
-                                                : document.getElementById('propPaymentTerms').value;
-                                const items=[];
-                                document.querySelectorAll('#itemsBody tr').forEach(row => {
-                                                const inputs=row.querySelectorAll('input');
-                                                const name=inputs[0]?.value.trim();
-                                                const qty=parseFloat(inputs[1]?.value)||0;
-                                                const price=parseFloat(inputs[2]?.value)||0;
-                                                if(name) items.push({name,qty,price,total:qty*price});
-                                });
-                                return {
-                                                userId:currentUser.uid, companyId:currentUserDoc.companyId||null,
-                                                date:new Date().toLocaleDateString('ar-SA'),
-                                                myCompany:document.getElementById('myCompany').value.trim(),
-                                                myTitle:document.getElementById('myTitle').value.trim(),
-                                                myCR:document.getElementById('myCR').value.trim(),
-                                                myVAT:document.getElementById('myVAT').value.trim(),
-                                                clientCompany:document.getElementById('clientCompany').value.trim(),
-                                                clientContact:document.getElementById('clientContact').value.trim(),
-                                                clientCity:document.getElementById('clientCity').value,
-                                                clientEmail:document.getElementById('clientEmail').value.trim(),
-                                                subject:document.getElementById('propSubject').value.trim(),
-                                                sector:document.getElementById('propSector').value,
-                                                validity:parseInt(document.getElementById('propValidity').value)||30,
-                                                duration:document.getElementById('propDuration').value.trim(),
-                                                paymentTerms:payTerms,
-                                                notes:document.getElementById('propNotes').value.trim(),
-                                                items, ...tots, aiText, logoDataURL, stampDataURL,
-                                                status:'draft', viewCount:0, isClientLive:false, createdAt:serverTimestamp()
-                                };
-                }
-
-                window.saveProposal = async status => {
-                                if (!currentUser) { showModal('loginModal'); return; }
-                                if (!await checkQuota()) return;
-                                const data=gatherProposalData();
-                                if (!data.myCompany||!data.clientCompany||!data.subject) { alert('يرجى ملء الحقول الإلزامية: اسم الشركة، اسم العميل، موضوع العرض'); return; }
-
-                                const propsQ=query(collection(db,'proposals'),where('userId','==',currentUser.uid));
-                                const propsSnap=await getDocs(propsQ);
-                                data.ref=generateRef(propsSnap.size);
-                                data.status=status;
-
-                                // save images in localStorage
-                                const logoKey='logo_'+currentUser.uid;
-                                const stampKey='stamp_'+currentUser.uid;
-                                try { if(data.logoDataURL) localStorage.setItem(logoKey, data.logoDataURL); } catch(e){}
-                                try { if(data.stampDataURL) localStorage.setItem(stampKey, data.stampDataURL); } catch(e){}
-                                const dataForFirestore={...data};
-                                delete dataForFirestore.logoDataURL;
-                                delete dataForFirestore.stampDataURL;
-                                try {
-                                                const docRef=await addDoc(collection(db,'proposals'),dataForFirestore);
-                                                await deductQuota();
-                                                currentProposalId=docRef.id;
-                                                await openProposal(docRef.id);
-                                } catch(e) { alert('خطأ في الحفظ: '+e.message); }
-                };
-
-                window.generateAI = async () => {
-                                if (!currentUser){showModal('loginModal');return;}
-                                if (!await checkQuota())return;
-                                const data=gatherProposalData();
-                                if (!data.myCompany||!data.clientCompany||!data.subject){alert('يرجى ملء الحقول الإلزامية أولاً');return;}
-
-                                showModal('aiGeneratingModal');
-                                const steps=['صياغة عرض احترافي...','تخصيص النص للقطاع...','التحليل...','مراجعة نهائية...'];
-                                let si=0;
-                                const stepsEl=document.getElementById('aiLoadingStep');
-                                const timer=setInterval(()=>{stepsEl.textContent=steps[si++%steps.length];},1200);
-
-                                function generateLocalText(d) {
-                                                const items=d.items.filter(i=>i.name).map(i=>i.name).join(' و');
-                                                return `بسم الله الرحمن الرحيم\n\nالسادة / ${d.clientCompany} المحترمون،${d.clientContact?'\nأ. '+d.clientContact+' المحترم،':''}\n\nالسلام عليكم ورحمة الله وبركاته،\n\nيسعد ${d.myCompany} أن تتقدم لكم بهذا العرض التقني والمالي المتكامل لتنفيذ مشروع "${d.subject}"، انطلاقاً من إيماننا بأن شراكتنا مع ${d.clientCompany} ستُسهم في تحقيق أهدافكم الاستراتيجية بكفاءة عالية.\n\nتضمّن هذا العرض ${items?'تفاصيل دقيقة لـ '+items+'،':'منظومة متكاملة من الخدمات المتخصصة،'} وقد أعددناه وفق أعلى معايير الجودة المعتمدة في قطاع ${d.sector||'الأعمال'}، مع الالتزام التام بالجدول الزمني${d.duration?' والبالغ '+d.duration:''}\n\nنحرص دائماً على تقديم أفضل قيمة مقابل الاستثمار؛ إذ تشمل خدماتنا الدعم الفني المستمر وضمان الجودة. وقد رصدنا الإجمالي الكلي بمبلغ ${formatAmount(d.total)} ريال سعودي شاملاً ضريبة القيمة المضافة 15%.\n\nنتطلع إلى شرف التعاون معكم،\n${d.myCompany}${d.myTitle?'\n'+d.myTitle:''}`;
-                                }
-
-                                let aiText='';
-                                try {
-                                                const prompt=`أنت خبير في كتابة عروض الأسعار التجارية الاحترافية باللغة العربية الفصحى للسوق السعودية.\nاكتب نص عرض سعر احترافي ومقنع:\n- مُقِّدم العرض: ${data.myCompany}\n- العميل: ${data.clientCompany} (${data.clientContact||''}) في ${data.clientCity||''}\n- موضوع العرض: ${data.subject}\n- القطاع: ${data.sector}\n- مدة التنفيذ: ${data.duration||'حسب الاتفاق'}\n- شروط الدفع: ${data.paymentTerms}\n- الإجمالي شامل الضريبة: ${formatAmount(data.total)} ريال\n- البنود: ${data.items.map(i=>i.name).join('، ')}\n- ملاحظات: ${data.notes||'لا يوجد'}\nاكتب فقرات متواصلة احترافية. لا تستخدم عناوين أو نقاط.`;
-                                                const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
-                                                const result=await resp.json();
-                                                aiText=result.content?.[0]?.text||'';
-                                                if(!aiText)throw new Error('empty');
-                                } catch(e) { aiText=generateLocalText(data); }
-
-                                clearInterval(timer);
-                                closeModal('aiGeneratingModal');
-
-                                const propsQ=query(collection(db,'proposals'),where('userId','==',currentUser.uid));
-                                const propsSnap=await getDocs(propsQ);
-                                data.ref=generateRef(propsSnap.size);
-                                data.aiText=aiText; data.status='draft';
-
-                                const logoKey = 'logo_' + currentUser.uid;
-                                const stampKey = 'stamp_' + currentUser.uid;
-                                try { if (data.logoDataURL) localStorage.setItem(logoKey, data.logoDataURL); } catch(e){}
-                                try { if (data.stampDataURL) localStorage.setItem(stampKey, data.stampDataURL); } catch(e){}
-                                const dataForFirestore = {...data};
-                                delete dataForFirestore.logoDataURL;
-                                delete dataForFirestore.stampDataURL;
-                                try {
-                                                const docRef=await addDoc(collection(db,'proposals'), dataForFirestore);
-                                                await deductQuota();
-                                                currentProposalId=docRef.id;
-                                                const fullData={id:docRef.id,...dataForFirestore,
-                                                                logoDataURL: (()=>{try{return localStorage.getItem(logoKey);}catch(e){return null;}})(),
-                                                                stampDataURL: (()=>{try{return localStorage.getItem(stampKey);}catch(e){return null;}})()
-                                                };
-                                                renderPreview(fullData, aiText);
-                                                showPage('pagePreview');
-                                                document.getElementById('aiEditSection').style.display='block';
-                                                document.getElementById('aiEditTextarea').value=aiText;
-                                } catch(e) {
-                                                clearInterval(timer);
-                                                closeModal('aiGeneratingModal');
-                                                alert('خطأ في الحفظ: '+e.message);
-                                }
-                };
-
-                window.confirmAIText = async () => {
-                                const text=document.getElementById('aiEditTextarea').value;
-                                if (!currentProposalId)return;
-                                await updateDoc(doc(db,'proposals',currentProposalId),{aiText:text});
-                                document.getElementById('aiEditSection').style.display='none';
-                                document.getElementById('paperAIText').textContent=text;
-                                alert('✅ تم حفظ العرض بالنص المعَّدل');
-                };
-
-                window.openProposal = async id => {
-                                const snap=await getDoc(doc(db,'proposals',id));
-                                if (!snap.exists())return;
-                                currentProposalId=id;
-                                const p={id,...snap.data()};
-                                if(currentUser){
-                                                p.logoDataURL = (()=>{try{return localStorage.getItem('logo_'+p.userId);}catch(e){return null;}})();
-                                                p.stampDataURL = (()=>{try{return localStorage.getItem('stamp_'+p.userId);}catch(e){return null;}})();
-                                }
-                                renderPreview(p, p.aiText);
-                                showPage('pagePreview');
-                                document.getElementById('aiEditSection').style.display='none';
-                                updateTrackingUI(p);
-                };
-
-                function renderPreview(p, aiText) {
-                                document.getElementById('fomoDays').textContent=p.validity||30;
-                                const logoImg=document.getElementById('paperLogoImg');
-                                if(p.logoDataURL){logoImg.src=p.logoDataURL;logoImg.style.display='block';}else logoImg.style.display='none';
-
-                                document.getElementById('paperCompanyName').textContent=p.myCompany||'ProposalIQ';
-                                document.getElementById('paperCompanyTitle').textContent=p.myTitle||'';
-                                document.getElementById('paperRef').textContent=p.ref||'PQ-2026-001';
-                                document.getElementById('paperDate').textContent='التاريخ: '+(p.date||'—');
-                                document.getElementById('paperValidity2').textContent='الصلاحية: '+(p.validity||30)+' يوم';
-
-                                document.getElementById('partyFromName').textContent=p.myCompany||'—';
-                                document.getElementById('partyFromTitle').textContent=p.myTitle||'';
-                                document.getElementById('partyFromCR').textContent=p.myCR?'س.ت: '+p.myCR:'';
-                                document.getElementById('partyFromVAT').textContent=p.myVAT?'VAT: '+p.myVAT:'';
-                                document.getElementById('partyToName').textContent=p.clientCompany||'—';
-                                document.getElementById('partyToContact').textContent=p.clientContact||'';
-                                document.getElementById('partyToCity').textContent=p.clientCity||'';
-                                document.getElementById('partyToEmail').textContent=p.clientEmail||'';
-                                document.getElementById('paperSubject').textContent=p.subject||'—';
-                                document.getElementById('paperSector').textContent=p.sector?'القطاع: '+p.sector:'';
-                                document.getElementById('paperAIText').textContent=aiText||p.aiText||'لم يتم توليد نص بعد.';
-
-                                const tbody=document.getElementById('paperItemsBody');
-                                tbody.innerHTML='';
-                                (p.items||[]).forEach((item,i) => {
-                                                const tr=document.createElement('tr');
-                                                [i+1,item.name,item.qty,formatAmount(item.price)+' س.ر',formatAmount(item.total)+' س.ر'].forEach(v=>{
-                                                                const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
-                                                });
-                                                tbody.appendChild(tr);
-                                });
-
-                                document.getElementById('paperTotalsBody').innerHTML=`
-                                                <tr><td class="t-label">المجموع قبل الخصم</td><td class="t-val">${formatAmount(p.subtotal)} س.ر</td></tr>
-                                                ${(p.discount||0)>0?`<tr class="t-discount"><td class="t-label">الخصم</td><td class="t-val">- ${formatAmount(p.discount)} س.ر</td></tr>`:''}
-                                                <tr><td class="t-label">ضريبة القيمة المضافة 15%</td><td class="t-val">${formatAmount(p.vat)} س.ر</td></tr>
-                                                <tr class="t-final"><td>الإجمالي شامل الضريبة</td><td>${formatAmount(p.total)} س.ر</td></tr>`;
-
-                                document.getElementById('paperPayTerms').textContent=p.paymentTerms||'—';
-                                document.getElementById('paperDurationBox').textContent=p.duration||'حسب الاتفاق';
-                                document.getElementById('paperValidityDays').textContent=p.validity||30;
-                                const sImg=document.getElementById('paperStampImg');
-                                const sPH=document.getElementById('paperStampPlaceholder');
-                                if(p.stampDataURL){sImg.src=p.stampDataURL;sImg.style.display='block';sPH.style.display='none';}
-                                else{sImg.style.display='none';sPH.style.display='flex';}
-
-                                const clientSigImg = document.getElementById('paperClientSigImg');
-                                const clientSigPH = document.getElementById('paperClientSigPlaceholder');
-                                if(clientSigImg && clientSigPH) {
-                                                if(p.clientSignature){clientSigImg.src=p.clientSignature;clientSigImg.style.display='block';clientSigPH.style.display='none';}
-                                                else{clientSigImg.style.display='none';clientSigPH.style.display='flex';}
-                                }
-
-                                document.getElementById('paperFooterCompany').textContent=p.myCompany||'';
-                                updateTrackingUI(p);
-                }
-
-                window.updateProposalStatus = async status => {
-                                if (!currentProposalId)return;
-                                await updateDoc(doc(db,'proposals',currentProposalId),{status, [`${status}At`]:serverTimestamp()});
-                                const labels={sent:'✅ تم تحديد العرض كمُرسَل',pending:'✅ تم إرسال العرض للمدير للاعتماد',accepted:'✅ تم قبول العرض'};
-                                Swal.fire({toast:true,position:'top-end',icon:'success',title:labels[status]||'تم التحديث',showConfirmButton:false,timer:2500});
-                };
-
-                function updateTrackingUI(p) {
-                                const statusEl=document.getElementById('trackingStatus');
-                                const countEl=document.getElementById('trackingViewCount');
-                                if(!statusEl||!countEl)return;
-                                const count=p.viewCount||0;
-                                if(count>0){
-                                                statusEl.textContent='آخر فتح: '+(p.lastViewAt?new Date(p.lastViewAt.seconds*1000).toLocaleString('ar-SA'):'—');
-                                                statusEl.style.color='#2e7d32';
-                                                countEl.textContent=count+' مشاهدة';countEl.style.background='#2e7d32';
-                                } else {
-                                                statusEl.textContent='لم يُفتح بعد';statusEl.style.color='#555';
-                                                countEl.textContent='0 مشاهدة';countEl.style.background='#1565c0';
-                                }
-                }
-
-                window.copyTrackingLink = () => {
-                                if(!currentProposalId)return;
-                                const url=window.location.origin+window.location.pathname+'?track='+currentProposalId;
-                                _safeCopy(url).then(()=>alert('✅ تم نسخ رابط التتبع:\n'+url)).catch(()=>prompt('رابط التتبع:',url));
-                };
-
-                window.manualRecordView = async () => {
-                                if(!currentProposalId)return;
-                                await updateDoc(doc(db,'proposals',currentProposalId),{viewCount:increment(1),lastViewAt:serverTimestamp()});
-                                const snap=await getDoc(doc(db,'proposals',currentProposalId));
-                                if(snap.exists())updateTrackingUI({id:currentProposalId,...snap.data()});
-                                alert('✅ تم تسجيل مشاهدة جديدة');
-                };
-
-                window.exportPDF = () => {
-                                const element = document.getElementById('proposalPaper');
-                                if (!element) { window.print(); return; }
-                                const opt = {
-                                                margin: [10,10,10,10],
-                                                filename: (currentProposalId || 'ProposalIQ') + '.pdf',
-                                                image: { type: 'jpeg', quality: 0.98 },
-                                                html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false },
-                                                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                                                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                                };
-                                html2pdf().set(opt).from(element).save();
-                };
-
-                window.shareWA = () => {
-                                if(!currentProposalId)return;
-                                getDoc(doc(db,'proposals',currentProposalId)).then(s => {
-                                                if(!s.exists())return;
-                                                const p=s.data();
-                                                const viewLink=window.location.origin+window.location.pathname+'?track='+currentProposalId;
-                                                const msg=`السلام عليكم ${p.clientContact||''}،\n\nنرسل لكم عرض السعر الخاص بـ *${p.subject}*\n\n🔹 المرجع: ${p.ref}\n💰 الإجمالي: ${formatAmount(p.total)} ريال شامل VAT\n⏰ صالح لـ: ${p.validity||30} يوم\n\n🔗 لعرض التفاصيل:\n${viewLink}\n\nنتطلع لتعاملكم الكريم 🤝`;
-                                                window.location.href='https://wa.me/?text='+encodeURIComponent(msg);
-                                });
-                };
-
-                window.shareEmail = () => {
-                                if(!currentProposalId)return;
-                                getDoc(doc(db,'proposals',currentProposalId)).then(s => {
-                                                if(!s.exists())return;
-                                                const p=s.data();
-                                                const subject=encodeURIComponent(`عرض سعر: ${p.subject} — ${p.ref}`);
-                                                const body=encodeURIComponent(`السلام عليكم ${p.clientContact||''}،\n\nيسعدنا تقديم عرض السعر.\n\nالإجمالي: ${formatAmount(p.total)} ريال شامل VAT 15%\nالمرجع: ${p.ref}\n\nمع التقدير،\n${p.myCompany}`);
-                                                const a=document.createElement('a');
-                                                a.href=`mailto:${p.clientEmail||''}?subject=${subject}&body=${body}`;
-                                                a.target='_blank'; document.body.appendChild(a); a.click();
-                                                document.body.removeChild(a);
-                                });
-                };
-
-                window.runPricingAI = async () => {
-                                if(!currentProposalId)return;
-                                const snap=await getDoc(doc(db,'proposals',currentProposalId));
-                                if(!snap.exists())return;
-                                const p=snap.data();
-                                const resultEl=document.getElementById('pricingAIResult');
-                                resultEl.style.display='block';
-                                resultEl.innerHTML='<div style="text-align:center;padding:12px;color:var(--muted)">🤖 الذكاء الاصطناعي يحلل عرضك...</div>';
-                                try {
-                                                const prompt=`أنت خبير تسعير للسوق السعودية. حلّل هذا العرض وقدّم توصيات موجزة (لا تتجاوز 120 كلمة):\n- الشركة: ${p.myCompany} | العميل: ${p.clientCompany} (${p.clientCity})\n- القطاع: ${p.sector} | موضوع: ${p.subject}\n- الإجمالي مع VAT: ${formatAmount(p.total)} ريال\n- شروط الدفع: ${p.paymentTerms}\nقدّم: 1🎯 تقييم التسعير 2💡 خصم مقترح 3📊 نسبة احتمالية القبول (%) 4✅ توصية نهائية`;
-                                                const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,messages:[{role:'user',content:prompt}]})});
-                                                const result=await resp.json();
-                                                const txt=result.content?.[0]?.text;
-                                                if(!txt)throw new Error('empty');
-                                                resultEl.innerHTML=`<div style="white-space:pre-wrap;line-height:1.75;">${escapeHtml(txt)}</div>`;
-                                } catch(e) {
-                                                const suggested=Math.round((p.total||0)*0.05);
-                                                resultEl.innerHTML=`<div style="white-space:pre-wrap;line-height:1.75;">🎯 السعر المقدّم في النطاق التنافسي للسوق السعودي.\n💡 خصم اختياري ${formatAmount(suggested)} ريال (5%) لرفع احتمال القبول.\n📊 احتمالية القبول: 72%\n✅ احرص على المتابعة خلال 48 ساعة.</div>`;
-                                }
-                };
-
-                window.runNegotiationAI = async () => {
-                                if(!currentProposalId)return;
-                                const input=document.getElementById('negotiationInput').value.trim();
-                                if(!input){Swal.fire('⚠️','أدخل ملاحظة العميل أولاً','warning');return;}
-                                const snap=await getDoc(doc(db,'proposals',currentProposalId));
-                                if(!snap.exists())return;
-                                const p=snap.data();
-                                const resultEl=document.getElementById('negotiationResult');
-                                resultEl.style.display='block';
-                                resultEl.innerHTML='<div style="text-align:center;padding:10px;color:var(--muted)">🤖 يُحلّل المناقشة...</div>';
-                                try {
-                                                const prompt=`أنت مفاوض تجاري للسوق السعودية. العرض: ${p.subject} | الإجمالي: ${formatAmount(p.total)} ريال | شروط الدفع: ${p.paymentTerms}. اعتراض العميل: "${input}". اقترح رداً احترافياً يتضمن: 1🎯 الموقف به 2💡 استراتيجيتا تفاوض 3⚠️ الحد الأدنى. لا تتجاوز 150 كلمة.`;
-                                                const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:450,messages:[{role:'user',content:prompt}]})});
-                                                const result=await resp.json();
-                                                const txt=result.content?.[0]?.text;
-                                                if(!txt)throw new Error('empty');
-                                                resultEl.innerHTML=`<div style="white-space:pre-wrap;line-height:1.75;">${escapeHtml(txt)}</div>`;
-                                } catch(e) {
-                                                const discount=Math.round((p.total||0)*0.05);
-                                                resultEl.innerHTML=`<div style="white-space:pre-wrap;line-height:1.75;">💬 نشكر تواصلكم. نحرص على شراكة ناجحة تمنح قيمة حقيقية.\n🎯 خصم ${formatAmount(discount)} ريال مقابل الدفع المقدّم.\n⚠️ لا نتخطى أكثر من 8% للحفاظ على هامش الربح.</div>`;
-                                }
-                };
-
-                window.generateToken = async () => {
-                                const plan=document.getElementById('tokenPlan').value;
-                                const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                                const rand4=()=>Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
-                                const code=`PQ-${rand4()}-${rand4()}`;
-
-                                const localTokens=JSON.parse((()=>{try{return localStorage.getItem('pq_tokens');}catch(e){return '[]';}})() || '[]');
-                                localTokens.push({code,plan,used:false,createdAt:new Date().toISOString()});
-                                try { try{localStorage.setItem('pq_tokens',JSON.stringify(localTokens));}catch(e){} } catch(e){}
-
-                                try {
-                                                await addDoc(collection(db,'tokens'),{code,plan,used:false,createdAt:serverTimestamp()});
-                                } catch(e) { /* fallback: localStorage only */ }
-
-                                document.getElementById('newTokenCode').textContent=code;
-                                document.getElementById('newTokenResult').style.display='block';
-                                const msg=encodeURIComponent(`مرحباً 👋\nرمز تفعيل ProposalIQ:\n*${code}*\nأدخله في المنصة لتفعيل اشتراكك.`);
-                                document.getElementById('tokenWaLink').href=`https://wa.me/${WA_NUMBER}?text=${msg}`;
-                                renderTokensList();
-                };
-
-                window.copyToken = () => {
-                                _safeCopy(document.getElementById('newTokenCode').textContent).then(()=>alert('تم النسخ ✅'));
-                };
-
-                async function renderTokensList() {
-                                const container=document.getElementById('tokensList');
-                                container.innerHTML='';
-                                let tokens=[];
-                                try {
-                                                const snap=await getDocs(collection(db,'tokens'));
-                                                if(!snap.empty) tokens=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-                                                else throw new Error('empty');
-                                } catch(e) {
-                                                tokens=JSON.parse((()=>{try{return localStorage.getItem('pq_tokens');}catch(e){return '[]';}})() || '[]').slice().reverse();
-                                }
-                                if(!tokens.length){container.innerHTML='<div style="text-align:center;padding:18px;color:var(--muted)">لا يوجد رموز بعد</div>';return;}
-                                tokens.forEach(t => {
-                                                const item=document.createElement('div'); item.className='token-item';
-                                                const planName=PLAN_CONFIG[t.plan]?.name||t.plan;
-                                                item.innerHTML=`<span class="token-code">${escapeHtml(t.code)}</span><span style="font-size:.8rem;color:var(--muted);">${escapeHtml(planName)}</span><span class="status-badge ${t.used?'s-accepted':'s-draft'}">${t.used?'مستخدَم':'متاح'}</span>`;
-                                                container.appendChild(item);
-                                });
-                }
-
-                function checkClientViewParam() {
-                                const params=new URLSearchParams(window.location.search);
-                                const trackId=params.get('track');
-                                if(!trackId)return false;
-                                getDoc(doc(db,'proposals',trackId)).then(async snap => {
-                                                if(!snap.exists()) { showClientViewNotFound(trackId); return; }
-                                                await updateDoc(doc(db,'proposals',trackId),{viewCount:increment(1),lastViewAt:serverTimestamp(),isClientLive:true});
-                                                window.addEventListener('beforeunload', () => {
-                                                                updateDoc(doc(db,'proposals',trackId), { isClientLive: false }).catch(()=>{});
-                                                });
-                                                const p={id:trackId,...snap.data()};
-                                                showClientView(p);
-                                }).catch(()=>showClientViewNotFound(trackId));
-                                document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-                                document.getElementById('pageClientView').classList.add('active');
-                                document.getElementById('clientViewContent').innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);"><div style="font-size:2rem;margin-bottom:10px;">⏳</div><div>جاري تحميل العرض...</div></div>';
-                                return true;
-                }
-
-                function showClientViewNotFound(ref) {
-                                document.getElementById('clientViewContent').innerHTML=`
-                                <div style="background:#fff;border-radius:14px;border:1px solid var(--border);padding:32px;text-align:center;">
-                                                <div style="font-size:3rem;margin-bottom:16px;">📄</div>
-                                                <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">عرض السعر</div>
-                                                <div style="color:var(--muted);margin-bottom:20px;">المرجع: <strong>${escapeHtml(ref)}</strong></div>
-                                                <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:10px;padding:16px;font-size:.9rem;color:#1565c0;margin-bottom:20px;">📧 تواصل مع مُقدِّم العرض مباشرة</div>
-                                                <a href="https://wa.me/${WA_NUMBER}" target="_blank" class="btn btn-wa">📱 تواصل واتساب</a>
-                                </div>`;
-                }
-
-                function startFomoCountdown(validityDays, dateStr) {
-                                if(fomoInterval) clearInterval(fomoInterval);
-                                const fomoEl = document.getElementById('clientFomoTimer');
-                                if(!fomoEl) return;
-                                let createdDate;
-                                try { createdDate = new Date(dateStr); } catch(e) { createdDate = new Date(); }
-                                if(isNaN(createdDate.getTime())) createdDate = new Date();
-                                const expiryDate = new Date(createdDate.getTime() + (validityDays||30)*24*60*60*1000);
-                                function updateTimer() {
-                                                const now = new Date();
-                                                const diff = expiryDate - now;
-                                                if(diff <= 0) {
-                                                                fomoEl.innerHTML = '⛔ انتهت صلاحية هذا العرض';
-                                                                fomoEl.style.background = 'linear-gradient(135deg,#c53030,#e53e3e)';
-                                                                clearInterval(fomoInterval);
-                                                                return;
-                                                }
-                                                const days = Math.floor(diff/(1000*60*60*24));
-                                                const hours = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
-                                                const minutes = Math.floor((diff%(1000*60*60))/(1000*60));
-                                                const seconds = Math.floor((diff%(1000*60))/1000);
-                                                fomoEl.innerHTML = `<span style="font-size:1.3rem;">⏰</span><div style="flex:1;"><div style="font-weight:700;font-size:.9rem;">⚠️ ينتهي هذا العرض خلال:</div><div style="font-size:1.4rem;font-weight:900;letter-spacing:2px;font-family:monospace;margin-top:4px;">${days} يوم ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}</div></div>`;
-                                }
-                                updateTimer();
-                                fomoInterval = setInterval(updateTimer, 1000);
-                }
-
-                window.recalcClientTotal = () => {
-                                const checks = document.querySelectorAll('.client-item-check');
-                                let selectedSubtotal = 0;
-                                checks.forEach(cb => { if(cb.checked) selectedSubtotal += parseFloat(cb.dataset.price)||0; });
-                                const vat = selectedSubtotal * 0.15;
-                                const total = selectedSubtotal + vat;
-                                const el = document.getElementById('clientSelectedTotal');
-                                if(el) el.textContent = formatAmount(total) + ' س.ر';
-                };
-
-                function showClientView(p) {
-                                document.getElementById('cvRef').textContent=p.ref||'';
-                                const items=(p.items||[]).map((item,i)=>`<tr><td style="padding:8px 11px;text-align:center;"><input type="checkbox" class="client-item-check" data-price="${item.total||0}" data-index="${i}" checked onchange="recalcClientTotal()" style="width:18px;height:18px;cursor:pointer;"/></td><td style="padding:8px 11px;">${i+1}</td><td style="padding:8px 11px;">${escapeHtml(item.name)}</td><td style="padding:8px 11px;">${item.qty}</td><td style="padding:8px 11px;font-weight:700;">${formatAmount(item.total)} س.ر</td></tr>`).join('');
-                                const hasSignature = p.clientSignature ? true : false;
-                                document.getElementById('clientViewContent').innerHTML=`
-                                <div id="clientFomoTimer" style="background:linear-gradient(135deg,#e65100,#f57c00);color:#fff;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:16px;"></div>
-                                <div class="proposal-paper">
-                                                <div class="paper-header"><div>${p.logoDataURL?`<img src="${p.logoDataURL}" style="max-height:55px;max-width:150px;object-fit:contain;background:rgba(255,255,255,.15);border-radius:8px;padding:5px;display:block;margin-bottom:6px;">`:''}<div class="paper-brand">${escapeHtml(p.myCompany||'ProposalIQ')}</div><div style="font-size:.78rem;opacity:.7;">${escapeHtml(p.myTitle||'')}</div></div><div class="paper-meta"><div class="ref">${escapeHtml(p.ref||'')}</div><div style="margin-top:5px;">التاريخ: ${escapeHtml(p.date||'')}</div><div>الصلاحية: ${p.validity||30} يوم</div></div></div>
-                                                <div class="paper-body">
-                                                                <div class="paper-parties"><div class="party-box"><div class="party-label">من: مُقدِّم العرض</div><div class="party-name">${escapeHtml(p.myCompany||'—')}</div>${p.myCR?`<div class="party-detail">س.ت: ${escapeHtml(p.myCR)}</div>`:''}</div><div class="party-box"><div class="party-label">إلى: العميل المحترم</div><div class="party-name">${escapeHtml(p.clientCompany||'—')}</div><div class="party-detail">${escapeHtml(p.clientContact||'')}</div><div class="party-detail">${escapeHtml(p.clientCity||'')}</div></div></div>
-                                                                <div class="paper-section-title">موضوع العرض</div>
-                                                                <div style="font-size:.98rem;font-weight:700;margin-bottom:6px;">${escapeHtml(p.subject||'')}</div>
-                                                                <div class="paper-section-title">تفاصيل العرض</div>
-                                                                <div class="paper-ai-text">${escapeHtml(p.aiText||'')}</div>
-                                                                <div class="paper-section-title">البنود والأسعار <span style="font-size:.75rem;color:var(--muted);font-weight:400;">— اختر الخدمات التي تناسبك</span></div>
-                                                                <table class="paper-items-table"><thead><tr><th style="width:40px;">✓</th><th>#</th><th>البند</th><th>الكمية</th><th>الإجمالي</th></tr></thead><tbody>${items}</tbody></table>
-                                                                <div style="background:var(--primary);color:#fff;padding:14px 18px;border-radius:10px;margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:1.05rem;"><span>الإجمالي المختار (شامل VAT 15%):</span><span id="clientSelectedTotal">${formatAmount(p.total)} س.ر</span></div>
-                                                                <div class="paper-validity" style="margin-top:20px;"><span style="font-size:1.3rem;">⚠️</span><div style="font-size:.86rem;font-weight:600">هذا العرض ساري لمدة <strong>${p.validity||30}</strong> يوماً من تاريخ الإصدار.</div></div>
-                                                                ${p.stampDataURL?`<div class="paper-stamp-area"><div class="stamp-box"><div class="stamp-label">ختم وتوقيع مُقدِّم العرض</div><img src="${p.stampDataURL}" style="max-height:80px;max-width:150px;object-fit:contain;display:block;margin:0 auto;"></div></div>`:''}
-                                                                <div class="signature-area" id="clientSignatureSection" style="${hasSignature?'display:none':''}">
-                                                                                <h4 style="margin-bottom:8px;font-size:.9rem;">✍️ توقيع العميل الإلكتروني</h4>
-                                                                                <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">وقّع هنا للموافقة على العرض</p>
-                                                                                <canvas id="sig-canvas" width="400" height="120" style="border:1px solid #ddd;border-radius:8px;background:#fff;max-width:100%;cursor:crosshair;touch-action:none;"></canvas>
-                                                                                <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;"><button class="btn btn-success" onclick="saveClientSignature('${p.id}')">✅ اعتماد التوقيع والموافقة</button><button class="btn btn-ghost btn-sm" onclick="clearSignature()">🔄 مسح</button></div>
-                                                                </div>
-                                                                ${hasSignature?`<div style="background:#e8f5e9;border:2px solid #2e7d32;border-radius:12px;padding:16px;text-align:center;margin-top:16px;"><div style="font-size:1.5rem;margin-bottom:8px;">✅</div><div style="font-weight:700;color:#2e7d32;margin-bottom:8px;">تم التوقيع والموافقة على هذا العرض</div><img src="${p.clientSignature}" style="max-height:60px;border:1px solid #ddd;border-radius:8px;padding:4px;background:#fff;"/></div>`:''}
-                                                                <div id="paymentSection" style="display:${hasSignature?'block':'none'};margin-top:16px;"><div style="background:linear-gradient(135deg,#1a4f8a,#2d6abf);color:#fff;border-radius:12px;padding:20px;text-align:center;"><div style="font-size:1.3rem;margin-bottom:8px;">💳</div><div style="font-weight:700;font-size:1rem;margin-bottom:6px;">ادفع العربون لتأكيد الطلب</div><div style="font-size:.85rem;opacity:.8;margin-bottom:14px;">يمكنك دفع العربون الآن لتأكيد حجز الخدمة</div><a href="https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('مرحباً، أريد دفع العربون للعرض: '+(p.ref||''))}" target="_blank" class="btn" style="background:#fff;color:var(--primary);font-weight:800;padding:12px 28px;font-size:.95rem;">💳 دفع العربون عبر تحويل بنكي</a><div style="font-size:.75rem;opacity:.6;margin-top:10px;">Apple Pay و مدى قريباً</div></div></div>
-                                                                <div style="text-align:center;margin-top:20px;"><a href="https://wa.me/${WA_NUMBER}" target="_blank" class="btn btn-wa">📱 للقبول أو الاستفسار تواصل واتساب</a></div>
-                                                </div>
-                                                <div class="paper-footer">تم إنشاء هذا العرض عبر · ProposalIQ · ARKANE AI · ${escapeHtml(p.myCompany||'')}</div>
-                                </div>`;
-                                setTimeout(()=>{
-                                                initSignaturePad('sig-canvas');
-                                                startFomoCountdown(p.validity||30, p.date);
-                                }, 300);
-                }
-
-                function initSignaturePad(canvasId) {
-                                const canvas = document.getElementById(canvasId);
-                                if (!canvas) return;
-                                const ctx = canvas.getContext('2d');
-                                let writing = false;
-                                let lastX = 0, lastY = 0;
-
-                                const getPos = (e) => {
-                                                const rect = canvas.getBoundingClientRect();
-                                                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                                                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                                                return {
-                                                                x: (clientX - rect.left) * (canvas.width / rect.width),
-                                                                y: (clientY - rect.top) * (canvas.height / rect.height)
-                                                };
-                                };
-
-                                const startDraw = (e) => {
-                                                e.preventDefault();
-                                                writing = true;
-                                                const pos = getPos(e);
-                                                lastX = pos.x; lastY = pos.y;
-                                };
-                                const endDraw = () => { writing = false; ctx.beginPath(); };
-                                const draw = (e) => {
-                                                if (!writing) return;
-                                                e.preventDefault();
-                                                const pos = getPos(e);
-                                                ctx.strokeStyle = '#1a4f8a';
-                                                ctx.lineWidth = 2;
-                                                ctx.lineCap = 'round';
-                                                ctx.lineJoin = 'round';
-                                                ctx.beginPath();
-                                                ctx.moveTo(lastX, lastY);
-                                                ctx.lineTo(pos.x, pos.y);
-                                                ctx.stroke();
-                                                lastX = pos.x; lastY = pos.y;
-                                };
-
-                                canvas.addEventListener('mousedown', startDraw);
-                                canvas.addEventListener('mouseup', endDraw);
-                                canvas.addEventListener('mouseleave', endDraw);
-                                canvas.addEventListener('mousemove', draw);
-                                canvas.addEventListener('touchstart', startDraw, {passive:false});
-                                canvas.addEventListener('touchend', endDraw);
-                                canvas.addEventListener('touchmove', draw, {passive:false});
-                }
-
-                window.clearSignature = () => {
-                                const canvas = document.getElementById('sig-canvas');
-                                if(!canvas) return;
-                                const ctx = canvas.getContext('2d');
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                };
-
-                window.saveClientSignature = async (proposalId) => {
-                                const canvas = document.getElementById('sig-canvas');
-                                if (!canvas) return;
-                                const ctx = canvas.getContext('2d');
-                                const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                                let hasDrawing = false;
-                                for(let i=3; i<pixelData.length; i+=4) { if(pixelData[i] > 0) { hasDrawing=true; break; } }
-                                if(!hasDrawing) { Swal.fire('⚠️','يرجى التوقيع أولاً قبل الاعتماد','warning'); return; }
-                                const dataURL = canvas.toDataURL('image/png');
-                                try {
-                                                await updateDoc(doc(db,'proposals',proposalId), {
-                                                                clientSignature: dataURL,
-                                                                signedAt: serverTimestamp(),
-                                                                status: 'accepted'
-                                                });
-                                                const sigSection = document.getElementById('clientSignatureSection');
-                                                if(sigSection) sigSection.style.display='none';
-                                                const paySection = document.getElementById('paymentSection');
-                                                if(paySection) paySection.style.display='block';
-                                                Swal.fire({icon:'success',title:'✅ تم اعتماد التوقيع',text:'شكراً لثقتكم! تم قبول العرض رسمياً.',confirmButtonText:'تم'});
-                                } catch(e) {
-                                                Swal.fire({icon:'success',title:'تم حفظ التوقيع',text:'شكراً لثقتكم!'});
-                                }
-                };
-
-                const pricingData={
-                                monthly:{basic:'240 <span>ريال/شهر</span>',advanced:'600 <span>ريال/شهر</span>',enterprise:'18,000 <span>ريال/سنة</span>'},
-                                quarterly:{basic:'599 <span>ريال/ربع</span>',advanced:'1,499 <span>ريال/ربع</span>',enterprise:'18,000 <span>ريال/سنة</span>'},
-                                yearly:{basic:'1,999 <span>ريال/سنة</span>',advanced:'4,999 <span>ريال/سنة</span>',enterprise:'18,000 <span>ريال/سنة</span>'}
-                };
-                window.setPricingPeriod=p=>{'Monthly,Quarterly,Yearly'.split(',').forEach(k=>document.getElementById('tog'+k).classList.remove('active'));document.getElementById('tog'+p.charAt(0).toUpperCase()+p.slice(1)).classList.add('active');document.getElementById('priceBasic').innerHTML=pricingData[p].basic;document.getElementById('priceAdvanced').innerHTML=pricingData[p].advanced;document.getElementById('priceEnterprise').innerHTML=pricingData[p].enterprise;};
-
-                document.addEventListener('change',e => {
-                                if(e.target.id==='propPaymentTerms') document.getElementById('propPaymentTermsCustom').style.display=e.target.value==='custom'?'block':'none';
-                });
-                document.addEventListener('input',e => {
-                                if(e.target.id==='regPassword2'||e.target.id==='regPassword') {
-                                                const p1=document.getElementById('regPassword')?.value||'';
-                                                const p2=document.getElementById('regPassword2')?.value||'';
-                                                const hint=document.getElementById('passMatchHint');
-                                                if(!hint||!p2){if(hint)hint.style.display='none';return;}
-                                                hint.style.display='block';
-                                                if(p1===p2){hint.textContent='✅ متطابقتان';hint.style.color='#17a85a';}
-                                                else{hint.textContent='❌ غير متطابقتين';hint.style.color='#d63031';}
-                                }
-                });
-
-</script>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #2c3e50;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm;
+            position: relative;
+            page-break-after: always;
+            padding: 20mm;
+            box-sizing: border-box;
+        }
+        .header-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15mm;
+            background: linear-gradient(90deg, #1a4a5e, #2ecc71);
+        }
+        .title-section {
+            margin-top: 40mm;
+            text-align: center;
+        }
+        h1 {
+            font-size: 36pt;
+            color: #1a4a5e;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 18pt;
+            color: #7f8c8d;
+            margin-bottom: 50mm;
+        }
+        .section-title {
+            font-size: 22pt;
+            color: #1a4a5e;
+            border-bottom: 3px solid #2ecc71;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        p, li {
+            font-size: 12pt;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        .highlight-box {
+            background-color: #ffffff;
+            border-right: 5px solid #2ecc71;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .grid {
+            display: table;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .col {
+            display: table-cell;
+            width: 50%;
+            padding: 10px;
+            vertical-align: top;
+        }
+        .stat-card {
+            background: #1a4a5e;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px;
+        }
+        .stat-value {
+            font-size: 24pt;
+            font-weight: bold;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #ecf0f1;
+            color: #1a4a5e;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header-bar"></div>
+        <div class="title-section">
+            <h1 style="font-size: 50pt;">مِيثاق (Methaq)</h1>
+            <div class="subtitle">نظام التشغيل الرقمي لامتثال واستدامة الأصول العقارية</div>
+            <p style="text-align: center; font-weight: bold; font-size: 14pt;">"نحو هوية رقمية ذكية لكل مبنى في المملكة العربية السعودية"</p>
+        </div>
+        <div style="position: absolute; bottom: 30mm; width: 100%; text-align: center;">
+            <p>عرض استثماري مخصص لمنصة (فكرة)</p>
+            <p>إعداد: فريق تطوير الأعمال - ميثاق 2026</p>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="section-title">المشكلة: عنق الزجاجة في التحول الحضري</div>
+        <p>تواجه المشاريع العقارية الكبرى في السعودية (Mega-Projects) فجوة تشغيلية كبرى تتلخص في:</p>
+        <ul>
+            <li><strong>ضياع الأصول الرقمية:</strong> فقدان مخططات "كما نُفذ" (As-built) وشهادات الضمان بعد تسليم المشروع.</li>
+            <li><strong>تحديات الامتثال:</strong> صعوبة مواكبة تحديثات "كود البناء السعودي" (SBC) بشكل يدوي ومستمر.</li>
+            <li><strong>مخاطر العيوب الخفية:</strong> غياب سجل صيانة وقائية موثق يمنع شركات التأمين من تغطية المطالبات.</li>
+        </ul>
+        
+        <div class="section-title" style="margin-top: 30mm;">الحل: منصة مِيثاق</div>
+        <div class="highlight-box">
+            منصة SaaS تعمل كـ "توأم رقمي" (Digital Twin) ومركز امتثال قانوني. لا تكتفي بإدارة الصيانة، بل توثق كل تفصيلة في المبنى منذ لحظة الاستلام، وتربطها بمتطلبات الكود السعودي والجهات الرقابية.
+        </div>
+        <p><strong>الميزات الرئيسية:</strong></p>
+        <ul>
+            <li>سجل "Blockchain" غير قابل للتعديل لضمانات الأجهزة والمواد.</li>
+            <li>تنبيهات امتثال ذكية مرتبطة آلياً بتحديثات كود البناء.</li>
+            <li>لوحة تحكم (Dashboard) لشركات التأمين لتقييم المخاطر الحية.</li>
+        </ul>
+    </div>
+
+    <div class="page">
+        <div class="section-title">تحليل السوق السعودي (Vision 2030)</div>
+        <p>يعد قطاع العقارات وإدارة المرافق أحد الركائز الأساسية لرؤية 2030، والأرقام تشير إلى فرصة غير مسبوقة:</p>
+        
+        <div class="grid">
+            <div class="col">
+                <div class="stat-card">
+                    <span class="stat-value">50 مليار</span>
+                    ريال حجم سوق إدارة المرافق المتوقع 2030
+                </div>
+            </div>
+            <div class="col">
+                <div class="stat-card">
+                    <span class="stat-value">200,000+</span>
+                    جمعية ملاك مستهدفة عبر نظام "ملاك"
+                </div>
+            </div>
+        </div>
+
+        <p style="margin-top: 20mm;"><strong>الجمهور المستهدف:</strong></p>
+        <ol>
+            <li><strong>المطورون العقاريون (روشن، دار الأركان):</strong> لرفع قيمة أصولهم وضمان التسليم السلس.</li>
+            <li><strong>شركات إدارة المرافق (FM Companies):</strong> كأداة تشغيل مركزية.</li>
+            <li><strong>صناديق الاستثمار العقاري (REITs):</strong> لمراقبة أداء العقارات وصيانتها.</li>
+            <li><strong>الجهات الحكومية:</strong> لمراقبة الامتثال والسلامة العامة.</li>
+        </ol>
+    </div>
+
+    <div class="page">
+        <div class="section-title">الميزة التنافسية (لماذا نحن؟)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>الميزة</th>
+                    <th>ميثاق (Methaq)</th>
+                    <th>الأنظمة العالمية (Procore/SAP)</th>
+                    <th>الحلول التقليدية (Excel)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>التوافق مع الكود السعودي</td>
+                    <td>متكامل وتلقائي (Native)</td>
+                    <td>غير موجود</td>
+                    <td>يدوي / عرضة للخطأ</td>
+                </tr>
+                <tr>
+                    <td>الربط مع (بلدي / ملاك)</td>
+                    <td>دعم كامل للـ APIs الحكومية</td>
+                    <td>لا يدعم</td>
+                    <td>مستحيل</td>
+                </tr>
+                <tr>
+                    <td>التكلفة</td>
+                    <td>نموذج مرن (Pay-per-sqm)</td>
+                    <td>باهظة جداً</td>
+                    <td>منخفضة (لكن الخسائر فادحة)</td>
+                </tr>
+                <tr>
+                    <td>سهولة الاستخدام</td>
+                    <td>واجهة عربية مخصصة للعمالة</td>
+                    <td>معقدة وتطلب تدريب طويل</td>
+                    <td>عشوائية</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box" style="margin-top: 30mm;">
+            <strong>الحصانة من التقليد:</strong> المنافسة ليست برمجية فقط، بل في "المعرفة التشريعية" والقدرة على الربط مع البنية التحتية الرقمية للمملكة، وهو أمر يتطلب سنوات من التطوير المحلي لا تملكه الشركات الخارجية.
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="section-title">التوقعات المالية (السنة الأولى)</div>
+        <p>نعتمد نموذج إيرادات مركب: (اشتراك تأسيسي + اشتراك شهري لكل وحدة/متر + رسوم تقارير الامتثال لشركات التأمين).</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>المؤشر</th>
+                    <th>الربع الأول</th>
+                    <th>الربع الثاني</th>
+                    <th>الربع الثالث</th>
+                    <th>الربع الرابع</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>عدد الوحدات المدارة</td>
+                    <td>500</td>
+                    <td>2,000</td>
+                    <td>7,000</td>
+                    <td>15,000</td>
+                </tr>
+                <tr>
+                    <td>الإيرادات المتوقعة (ريال)</td>
+                    <td>250,000</td>
+                    <td>1,000,000</td>
+                    <td>3,500,000</td>
+                    <td>7,500,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-title" style="margin-top: 20mm;">استراتيجية الدخول للسوق (GTM)</div>
+        <ul>
+            <li><strong>المرحلة 1 (Soft Launch):</strong> شراكة تجريبية مع مطور عقاري واحد في مشروع "روشن" أو "نيوم".</li>
+            <li><strong>المرحلة 2 (Integration):</strong> الربط الرسمي مع منصة "ملاك" لتسهيل إدارة المجمعات السكنية.</li>
+            <li><strong>المرحلة 3 (Scaling):</strong> تسويق المنصة لشركات التأمين كأداة لخفض "أقساط تأمين العيوب الخفية" للمباني المسجلة في ميثاق.</li>
+        </ul>
+
+        <div style="background: #2ecc71; color: white; padding: 15px; text-align: center; border-radius: 5px; margin-top: 20mm;">
+            <strong>لماذا تستحق الفكرة مليون ريال؟</strong><br>
+            لأنها لا تبيع برنامجاً، بل تبيع "نظام امتثال" يحمي أصولاً بمليارات الريالات من التلف والمساءلة القانونية.
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+# Output path
+pdf_path = "methaq_pitch_deck_v1.pdf"
+
+# Generate PDF
+HTML(string=html_content).write_pdf(pdf_path)
